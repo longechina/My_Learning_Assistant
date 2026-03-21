@@ -1,5 +1,8 @@
 import json
 import base64
+import io
+import re
+import os
 import streamlit as st
 import groq
 
@@ -36,6 +39,50 @@ def load_level_data():
 
 levels_data = load_level_data()
 
+# ---------- Groq 客户端 ----------
+client = groq.Client(api_key=os.environ.get("GROQ_API_KEY") or st.secrets["GROQ_API_KEY"])
+
+# ---------- 语音转文字（Whisper）----------
+def transcribe_audio(audio_bytes):
+    try:
+        transcription = client.audio.transcriptions.create(
+            file=("audio.wav", audio_bytes, "audio/wav"),
+            model="whisper-large-v3",
+        )
+        return transcription.text
+    except Exception as e:
+        return f"[转录失败: {e}]"
+
+# ---------- 判断文本是否含中文 ----------
+def has_chinese(text):
+    return bool(re.search(r'[\u4e00-\u9fff]', text))
+
+# ---------- 文字转语音 ----------
+def text_to_speech(text):
+    try:
+        if has_chinese(text):
+            # 中文用 gTTS
+            from gtts import gTTS
+            tts = gTTS(text=text, lang="zh")
+            buf = io.BytesIO()
+            tts.write_to_fp(buf)
+            buf.seek(0)
+            return buf, "audio/mp3"
+        else:
+            # 英文用 Groq Orpheus
+            response = client.audio.speech.create(
+                model="canopylabs/orpheus-v1-english",
+                voice="autumn",
+                input=text,
+                response_format="wav",
+            )
+            buf = io.BytesIO(response.read())
+            buf.seek(0)
+            return buf, "audio/wav"
+    except Exception as e:
+        st.error(f"TTS 失败: {e}")
+        return None, None
+
 # ---------- 构建系统提示（包含所有词汇和例句）----------
 def build_system_prompt(levels):
     prompt = "You are a Chinese learning assistant. Below is the outline of the learning content (Levels 1-3). The user may ask about specific items, but detailed vocabulary and examples are not listed here to save tokens. Please answer based on your knowledge, but if needed, you can ask the user to provide more details and make your answer structured, do not give messy information.\n\n"
@@ -43,10 +90,8 @@ def build_system_prompt(levels):
     def extract_outline(node, indent=0):
         outline = ""
         if isinstance(node, dict):
-            # 如果节点有 name，添加它作为标题
             if "name" in node and node["name"]:
                 outline += "  " * indent + "- " + node["name"] + "\n"
-            # 递归遍历子节点（排除元数据字段）
             for key, val in node.items():
                 if key not in ["name", "notes", "examples", "vocabulary"]:
                     outline += extract_outline(val, indent + 1)
@@ -59,6 +104,7 @@ def build_system_prompt(levels):
     
     prompt += "Answer the user's questions based on this outline. If you need specific vocabulary or example sentences, ask the user to provide them."
     return prompt
+
 system_prompt = build_system_prompt(levels_data)
 
 # ---------- 初始化聊天记录 ----------
@@ -74,6 +120,8 @@ if "path" not in st.session_state:
     st.session_state.path = []
 if "chat_open" not in st.session_state:
     st.session_state.chat_open = False
+if "pending_audio_reply" not in st.session_state:
+    st.session_state.pending_audio_reply = None
 
 # ---------- 自定义CSS ----------
 st.markdown(f"""
@@ -140,22 +188,22 @@ st.markdown(f"""
 
     /* ---------- 模仿项目标题的 Level 按钮样式 ---------- */
     div[data-testid="column"] .stButton > button {{
-        font-size: 56px !important;          /* 大号字体，可微调 */
-        font-weight: 700 !important;          /* 加粗 */
+        font-size: 56px !important;
+        font-weight: 700 !important;
         background-color: transparent !important;
         color: #000000 !important;
         border: none !important;
         box-shadow: none !important;
-        padding: 8px 0 !important;            /* 减少内边距，保持简洁 */
+        padding: 8px 0 !important;
         border-radius: 0 !important;
         transition: all 0.2s ease !important;
         width: 100%;
-        text-align: left;                     /* 左对齐，模仿原项目列表 */
+        text-align: left;
         margin: 0 !important;
         line-height: 1.2;
     }}
     div[data-testid="column"] .stButton > button:hover {{
-        text-decoration: underline !important; /* 悬停下划线，如原项目效果 */
+        text-decoration: underline !important;
         background-color: transparent !important;
     }}
 
@@ -280,8 +328,8 @@ st.markdown(f"""
     }}
 
     .chat-panel {{
-        width: 350px;
-        height: 500px;
+        width: 420px;
+        height: 600px;
         background-color: #ffffff !important;
         border-radius: 20px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -319,22 +367,23 @@ st.markdown(f"""
         margin-top: 8px;
     }}
     .stChatInput > div {{
-        background-color: transparent !important; border: 1px solid #ccc; 
-        border: 1px solid #dddddd !important;/
+        background-color: transparent !important;
+        border: 1px solid #dddddd !important;
         border-radius: 40px !important;
     }}
     .stChatInput input {{
         font-size: 32px !important;
-        padding: 12px 20px !important;
+        padding: 16px 24px !important;
         background-color: transparent !important;
         color: #000000 !important;
+        min-height: 60px !important;
     }}
     .stChatInput input::placeholder {{
         font-size: 32px !important;
         color: #666666 !important;
     }}
 
-    /* 清除聊天文本链接样式（新增） */
+    /* 清除聊天文本链接样式 */
     .clear-button-container .stButton > button {{
         background-color: transparent !important;
         border: none !important;
@@ -350,6 +399,21 @@ st.markdown(f"""
     }}
     .clear-button-container .stButton > button:hover {{
         color: #000000 !important;
+    }}
+
+    /* 音频播放器缩小 */
+    .stAudio {{
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+    }}
+    .stAudio audio {{
+        height: 36px !important;
+        width: 100% !important;
+    }}
+
+    /* 录音组件缩小 */
+    div[data-testid="stAudioInput"] {{
+        margin: 4px 0 !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -440,46 +504,78 @@ if st.session_state.level:
 with st.container():
     st.markdown('<div class="chat-float-container">', unsafe_allow_html=True)
 
-    # 切换按钮（文字 "AI"）
     if st.button("AI", key="chat_toggle_btn"):
         st.session_state.chat_open = not st.session_state.chat_open
         st.rerun()
 
-    # 聊天面板（条件显示）
     if st.session_state.chat_open:
         st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
 
-        # 清除文本链接（新增）
+        # 顶部：Clear 按钮
         st.markdown('<div class="clear-button-container" style="display: flex; justify-content: flex-end; padding: 8px 16px 0;">', unsafe_allow_html=True)
         if st.button("Clear", key="clear_chat"):
-            # 保留 system 消息，清空其他
             st.session_state.messages = [msg for msg in st.session_state.messages if msg["role"] == "system"]
+            st.session_state.pending_audio_reply = None
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # 聊天消息区域（纯文本，无气泡）
+        # 聊天消息区域
         st.markdown('<div class="chat-messages-area">', unsafe_allow_html=True)
-        for msg in st.session_state.messages:
+        for i, msg in enumerate(st.session_state.messages):
             if msg["role"] != "system":
                 if msg["role"] == "user":
                     st.markdown(f'<div class="chat-message"><strong>You:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="chat-message"><strong>AI:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
+                    # 🔊 朗读按钮
+                    if st.button("🔊", key=f"tts_{i}"):
+                        audio_buf, fmt = text_to_speech(msg["content"])
+                        if audio_buf:
+                            st.audio(audio_buf, format=fmt, autoplay=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # 聊天输入区域
-        st.markdown('<div class="chat-input-area">', unsafe_allow_html=True)
-        if prompt := st.chat_input("Ask a question..."):
-            # 添加用户消息
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            # 显示用户消息
-            st.markdown(f'<div class="chat-message"><strong>You:</strong> {prompt}</div>', unsafe_allow_html=True)
+        # 如果有待播放的 AI 回复音频，自动播放
+        if st.session_state.pending_audio_reply:
+            st.audio(st.session_state.pending_audio_reply["buf"],
+                     format=st.session_state.pending_audio_reply["fmt"],
+                     autoplay=True)
+            st.session_state.pending_audio_reply = None
 
-            # 调用 AI 获取回复
+        # 输入区域
+        st.markdown('<div class="chat-input-area">', unsafe_allow_html=True)
+
+        # 🎤 语音输入
+        audio_input = st.audio_input("🎤 录音发送", key="voice_input", label_visibility="collapsed")
+
+        if audio_input is not None:
+            with st.spinner("转录中..."):
+                transcript = transcribe_audio(audio_input.read())
+            if transcript and not transcript.startswith("[转录失败"):
+                st.session_state.messages.append({"role": "user", "content": transcript})
+                with st.spinner("AI 思考中..."):
+                    try:
+                        response = client.chat.completions.create(
+                            model="llama-3.3-70b-versatile",
+                            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                            temperature=0.7,
+                            max_tokens=500
+                        )
+                        reply = response.choices[0].message.content
+                    except Exception as e:
+                        reply = f"Error: {e}"
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                # 生成 TTS 并存储待播放
+                audio_buf, fmt = text_to_speech(reply)
+                if audio_buf:
+                    st.session_state.pending_audio_reply = {"buf": audio_buf, "fmt": fmt}
+                st.rerun()
+
+        # 💬 文字输入
+        if prompt := st.chat_input("Ask a question...", key="text_input"):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.markdown(f'<div class="chat-message"><strong>You:</strong> {prompt}</div>', unsafe_allow_html=True)
             with st.spinner("Thinking..."):
                 try:
-                    import os
-                    client = groq.Client(api_key=os.environ.get("GROQ_API_KEY") or st.secrets["GROQ_API_KEY"])
                     response = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
@@ -489,13 +585,14 @@ with st.container():
                     reply = response.choices[0].message.content
                 except Exception as e:
                     reply = f"Error: {e}"
-
-            # 添加 AI 回复
             st.session_state.messages.append({"role": "assistant", "content": reply})
-            st.markdown(f'<div class="chat-message"><strong>AI:</strong> {reply}</div>', unsafe_allow_html=True)
+            # 生成 TTS 并存储待播放
+            audio_buf, fmt = text_to_speech(reply)
+            if audio_buf:
+                st.session_state.pending_audio_reply = {"buf": audio_buf, "fmt": fmt}
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
