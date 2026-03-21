@@ -129,7 +129,7 @@ if "conv_history" not in st.session_state:
 if "user_msg_count" not in st.session_state:
     st.session_state.user_msg_count = 0                 # 用户消息计数器（用于触发总结）
 
-# ========== 自动参考相关状态（不再需要 reference_links） ==========
+# ========== 自动参考相关状态 ==========
 if "auto_ref_pushed" not in st.session_state:
     st.session_state.auto_ref_pushed = False   # 标记当前水平是否已自动推送
 
@@ -156,11 +156,21 @@ def get_current_page_context():
         parts.append("Vocabulary on this page:\n" + "\n".join(f"  - {v}" for v in node["vocabulary"]))
     return "\n".join(parts) if len(parts) > 1 else None
 
-# ========== 自动生成参考消息（AI 直接生成具体链接，无需用户提供的链接源） ==========
-def auto_generate_reference(level, topic_name, path_string):
+# ========== 获取页面预览（前几条例句和词汇，用于推荐上下文） ==========
+def get_page_preview(node):
+    """从当前节点提取前几条例句和词汇，作为预览内容"""
+    preview = ""
+    if "examples" in node and node["examples"]:
+        preview += "Example sentences:\n" + "\n".join(f"  - {e}" for e in node["examples"][:3]) + "\n"
+    if "vocabulary" in node and node["vocabulary"]:
+        preview += "Vocabulary:\n" + "\n".join(f"  - {v}" for v in node["vocabulary"][:5]) + "\n"
+    return preview.strip()
+
+# ========== 自动生成参考消息（AI 直接生成具体链接，基于主题和页面预览） ==========
+def auto_generate_reference(level, topic_name, page_preview, path_string):
     """
-    根据当前水平、主题名称，让 AI 直接生成具体的权威链接（BBC, YouTube, 大学等）。
-    输出格式：关键词 + 链接，纯文本，无 Markdown，无 emoji。
+    根据当前水平、主题名称、页面预览内容，让 AI 直接生成具体的权威链接。
+    输出格式：一行一个 "Keyword: URL"，纯文本，无 Markdown，无 emoji。
     """
     # 获取主题（优先使用节点 name，否则用路径最后一部分）
     if topic_name:
@@ -169,10 +179,15 @@ def auto_generate_reference(level, topic_name, path_string):
         parts = path_string.split(" > ")
         main_topic = parts[-1] if parts else "general"
     
-    prompt = f"""You are a Chinese learning assistant. The user is at Level {level} (beginner) and studying the topic: "{main_topic}".
+    # 构建提示，包含页面预览内容
+    preview_text = ""
+    if page_preview:
+        preview_text = f"\nThe page contains the following content preview:\n{page_preview}\n"
+    
+    prompt = f"""You are a Chinese learning assistant. The user is at Level {level} (beginner) and studying the topic: "{main_topic}".{preview_text}
 
 Your task:
-- Provide a list of specific, authoritative online resources (BBC, YouTube, university courses, etc.) that directly cover this topic at a beginner level.
+- Provide a list of specific, authoritative online resources (BBC, YouTube, university courses, etc.) that directly cover this topic at a beginner level, based on the topic and the provided page preview.
 - For each resource, output a line in the exact format: Keyword: URL
 - Do not include any other text, no markdown, no emojis, no descriptions.
 - Only output lines in the format "Keyword: URL". Use keywords like "BBC", "YouTube", "Coursera", "ChinesePod", etc.
@@ -207,8 +222,10 @@ def auto_push_reference(level, current_node, path_string):
 
     # 获取当前节点的名称（如果有）
     topic_name = current_node.get("name", "") if isinstance(current_node, dict) else ""
+    # 获取页面预览（前几条例句和词汇）
+    page_preview = get_page_preview(current_node)
 
-    ref_content = auto_generate_reference(level, topic_name, path_string)
+    ref_content = auto_generate_reference(level, topic_name, page_preview, path_string)
     if ref_content:
         # 直接使用 AI 生成的纯文本，不加额外标题
         final_msg = ref_content.strip()
