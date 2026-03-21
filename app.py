@@ -164,65 +164,69 @@ def get_current_page_context():
     return "\n".join(parts) if len(parts) > 1 else None
 
 # ========== 新增：自动生成参考消息的函数 ==========
-def auto_generate_reference(level, page_context):
+def auto_generate_reference(level, topic_description):
     """
-    根据当前水平、页面上下文以及配置的链接源，让 AI 生成一条参考消息。
-    返回生成的文本内容。
+    根据当前水平、目录主题以及配置的链接源，让 AI 生成一条参考消息。
+    只传递主题描述，避免上下文过大。
+    返回纯文本（无 Markdown），英文回复。
     """
     links = st.session_state.reference_links.get(level, [])
     if not links:
         return None
-    
-    # 构建提示词，让 AI 根据提供的链接源和当前学习主题，推荐相关内容
+
     links_text = "\n".join([f"- {link}" for link in links])
-    prompt = f"""你是一位专业的中文学习助手。用户正在学习以下内容：
+    
+    prompt = f"""You are a Chinese learning assistant. The user is at Level {level} and currently studying the topic: "{topic_description}".
 
-{page_context if page_context else "当前没有具体页面内容，但处于 Level {level} 学习阶段。"}
-
-你可以参考以下外部学习资源链接（这些是用户指定的可靠资源）：
+The user has provided these reference websites:
 {links_text}
 
-请根据用户当前的学习主题，从这些链接源中（如果可能，结合你对这些资源的了解）推荐最相关的内容，并简要说明这些内容如何帮助用户。请用中文回复，保持简洁、有帮助。最终回复格式可以包含适当的链接引用。"""
+If the content directly related to the topic is not available from these websites, please recommend relevant materials from authoritative sources such as BBC, China Daily, universities, mainstream newspapers, Stack Exchange Chinese, Wikipedia, etc.
 
+Please generate a concise and helpful recommendation in English. Use a structured format with plain text (no Markdown). Include specific links when possible. Keep it brief but informative.
+
+Output structure:
+- Briefly state what you are recommending.
+- List each resource with a short description and link.
+- End with a suggestion on how to use these resources."""
+    
     try:
         response = client.chat.completions.create(
             model="groq/compound",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=1000  # 控制长度
+            max_tokens=800  # 控制长度，避免输出过长
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"自动获取参考内容时出错：{e}"
+        return f"Auto-generation error: {e}"
 
 def auto_push_reference(level):
     """
     自动推送参考消息到聊天记录，并生成语音（可选）。
-    仅在未推送时执行一次。
+    只在未推送时执行一次。
     """
     if st.session_state.auto_ref_pushed:
         return
-    
-    page_context = get_current_page_context()
-    # 如果没有页面上下文（比如刚进入水平但还没点击具体目录），也可以基于水平生成通用推荐
-    if not page_context:
-        # 获取该水平的根目录名称
-        root_name = f"Level {level}"
-        page_context = f"用户正在学习 {root_name} 的总体内容。"
-    
-    ref_content = auto_generate_reference(level, page_context)
+
+    # 构建简短的目录主题描述
+    if st.session_state.path:
+        # 获取当前目录路径的最后一部分作为主题
+        topic = " > ".join(st.session_state.path)
+    else:
+        topic = f"Level {level} general content"
+
+    ref_content = auto_generate_reference(level, topic)
     if ref_content:
-        # 构建最终显示的消息
-        final_msg = f"📚 **自动推荐的学习资源**\n\n{ref_content}"
+        final_msg = f"📚 **Recommended Learning Resources**\n\n{ref_content}"
         st.session_state.messages.append({"role": "assistant", "content": final_msg})
-        
-        # 可选：生成语音（如果你不希望自动语音，可以注释掉）
+
+        # 可选：生成语音（如果不需要可注释）
         audio_bytes, fmt = text_to_speech(final_msg)
         if audio_bytes:
             st.session_state.pending_tts = (audio_bytes, fmt)
-        
+
         st.session_state.auto_ref_pushed = True
-        # 注意：这里不调用 st.rerun()，因为调用该函数后外部会有 rerun
 
 # ========== 缓存的 AI 回复函数 ==========
 @st.cache_data(ttl=3600, max_entries=100)
