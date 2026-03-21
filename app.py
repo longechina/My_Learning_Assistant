@@ -6,12 +6,6 @@ import os
 import streamlit as st
 import groq
 
-# ========== 新增：参考资料抓取所需库（可根据需要安装）==========
-# 为了演示，我们使用 requests + BeautifulSoup 进行简单的静态抓取
-# 实际生产环境中可能需要 Selenium 或 Playwright 来应对动态页面
-import requests
-from bs4 import BeautifulSoup
-
 # ---------- 将背景图片转换为 Base64 嵌入 CSS ----------
 def get_base64_of_image(image_path):
     try:
@@ -127,7 +121,7 @@ if "last_audio_id" not in st.session_state:
 if "pending_tts" not in st.session_state:
     st.session_state.pending_tts = None  # (bytes, fmt)
 
-# ========== 对话总结相关状态 ==========
+# ========== 新增：对话总结相关状态 ==========
 if "conversation_summary" not in st.session_state:
     st.session_state.conversation_summary = ""          # 存储总结文本
 if "conv_history" not in st.session_state:
@@ -135,102 +129,16 @@ if "conv_history" not in st.session_state:
 if "user_msg_count" not in st.session_state:
     st.session_state.user_msg_count = 0                 # 用户消息计数器（用于触发总结）
 
-# ========== 新增：参考资料推送状态 ==========
-if "last_reference_path" not in st.session_state:
-    st.session_state.last_reference_path = None          # 记录上次推送的目录路径，避免重复
-
-# ========== 参考资料源配置（可随意扩展）==========
-# 每个源包含：名称、URL、适用的等级列表、抓取函数（根据主题返回字符串列表）
-# 抓取函数应接收 topic 参数（主题关键词），返回一个列表，每个元素是一条参考内容
-def fetch_from_bbc_bitesize(topic, level):
-    """
-    从 BBC Bitesize 抓取与主题相关的内容（模拟）
-    实际可改为使用 Selenium/Playwright 进行动态抓取
-    """
-    # 这里仅作演示，返回固定内容。真实抓取需解析页面结构
-    # 注意：BBC Bitesize 可能需要处理 JavaScript，建议使用无头浏览器
-    # 示例：使用 requests 获取页面，但可能不完整
-    try:
-        # 模拟不同等级对应不同页面区域
-        base_url = "https://www.bbc.co.uk/bitesize/subjects/zwd88hv"
-        # 使用 requests 获取页面（可能无法获取动态内容）
-        # headers = {'User-Agent': 'Mozilla/5.0'}
-        # resp = requests.get(base_url, headers=headers, timeout=10)
-        # soup = BeautifulSoup(resp.text, 'html.parser')
-        # 根据 topic 查找相关内容
-        # 实际实现需根据页面结构编写选择器
-
-        # 临时模拟返回
-        return [
-            f"📖 **BBC Bitesize 推荐**（与「{topic}」相关）\n   • 初级语法：……\n   • 实用对话：……\n   🔗 更多内容：{base_url}"
-        ]
-    except Exception as e:
-        return [f"⚠️ 从 BBC Bitesize 抓取失败：{e}，请稍后再试。"]
-
-# 参考资料源列表，可按等级过滤
-REFERENCE_SOURCES = [
-    {
-        "name": "BBC Bitesize",
-        "url": "https://www.bbc.co.uk/bitesize/subjects/zwd88hv",
-        "levels": [1, 2, 3],  # 适用于所有等级
-        "fetch_func": fetch_from_bbc_bitesize
-    },
-    # 后续可以添加更多源，例如：
-    # {
-    #     "name": "其他中文学习网站",
-    #     "url": "https://example.com",
-    #     "levels": [2, 3],
-    #     "fetch_func": lambda topic, level: ["..."]
-    # },
-]
-
-def get_references_for_topic(level, topic):
-    """
-    根据等级和主题，从所有匹配的参考源获取内容
-    返回合并后的字符串列表
-    """
-    all_refs = []
-    for src in REFERENCE_SOURCES:
-        if level in src["levels"]:
-            try:
-                refs = src["fetch_func"](topic, level)
-                if refs:
-                    # 添加源标识
-                    all_refs.append(f"**{src['name']}**")
-                    all_refs.extend(refs)
-            except Exception as e:
-                all_refs.append(f"⚠️ 从 {src['name']} 获取资料时出错：{e}")
-    return all_refs
-
-def auto_push_references(level, current_node):
-    """
-    当用户进入新目录时，自动获取参考资料并插入聊天窗口
-    """
-    # 生成当前目录的唯一标识（路径字符串）
-    current_path_key = " > ".join(st.session_state.path)
-    if st.session_state.last_reference_path == current_path_key:
-        return  # 已经推送过，避免重复
-
-    # 提取主题关键词：优先使用节点名称，否则用路径最后一级
-    topic = current_node.get("name", st.session_state.path[-1]) if current_node else st.session_state.path[-1]
-
-    with st.spinner(f"正在查找与「{topic}」相关的参考资料..."):
-        ref_items = get_references_for_topic(level, topic)
-
-    if ref_items:
-        # 组装成一条助手的参考消息
-        ref_message = "📚 **自动推送的参考资料**（根据当前学习主题）\n\n" + "\n\n".join(ref_items)
-        st.session_state.messages.append({"role": "assistant", "content": ref_message})
-        # 可选：生成语音
-        audio_bytes, fmt = text_to_speech(ref_message)
-        if audio_bytes:
-            st.session_state.pending_tts = (audio_bytes, fmt)
-        # 记录已推送
-        st.session_state.last_reference_path = current_path_key
-        st.rerun()  # 刷新聊天区域显示新消息
-    else:
-        # 没有找到内容，也可以不推送
-        pass
+# ========== 新增：自动参考链接相关功能 ==========
+if "reference_links" not in st.session_state:
+    # 配置每个水平对应的参考链接源（可随意增删改，支持多个链接）
+    st.session_state.reference_links = {
+        1: ["https://www.bbc.co.uk/bitesize/subjects/zwd88hv"],   # Level 1 链接列表
+        2: ["https://www.bbc.co.uk/bitesize/subjects/zwd88hv"],   # Level 2 链接列表
+        3: ["https://www.bbc.co.uk/bitesize/subjects/zwd88hv"],   # Level 3 链接列表
+    }
+if "auto_ref_pushed" not in st.session_state:
+    st.session_state.auto_ref_pushed = False   # 标记当前水平是否已自动推送
 
 # ---------- 获取当前页面内容 ----------
 def get_current_page_context():
@@ -254,6 +162,67 @@ def get_current_page_context():
     if "vocabulary" in node and node["vocabulary"]:
         parts.append("Vocabulary on this page:\n" + "\n".join(f"  - {v}" for v in node["vocabulary"]))
     return "\n".join(parts) if len(parts) > 1 else None
+
+# ========== 新增：自动生成参考消息的函数 ==========
+def auto_generate_reference(level, page_context):
+    """
+    根据当前水平、页面上下文以及配置的链接源，让 AI 生成一条参考消息。
+    返回生成的文本内容。
+    """
+    links = st.session_state.reference_links.get(level, [])
+    if not links:
+        return None
+    
+    # 构建提示词，让 AI 根据提供的链接源和当前学习主题，推荐相关内容
+    links_text = "\n".join([f"- {link}" for link in links])
+    prompt = f"""你是一位专业的中文学习助手。用户正在学习以下内容：
+
+{page_context if page_context else "当前没有具体页面内容，但处于 Level {level} 学习阶段。"}
+
+你可以参考以下外部学习资源链接（这些是用户指定的可靠资源）：
+{links_text}
+
+请根据用户当前的学习主题，从这些链接源中（如果可能，结合你对这些资源的了解）推荐最相关的内容，并简要说明这些内容如何帮助用户。请用中文回复，保持简洁、有帮助。最终回复格式可以包含适当的链接引用。"""
+
+    try:
+        response = client.chat.completions.create(
+            model="groq/compound",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=1000  # 控制长度
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"自动获取参考内容时出错：{e}"
+
+def auto_push_reference(level):
+    """
+    自动推送参考消息到聊天记录，并生成语音（可选）。
+    仅在未推送时执行一次。
+    """
+    if st.session_state.auto_ref_pushed:
+        return
+    
+    page_context = get_current_page_context()
+    # 如果没有页面上下文（比如刚进入水平但还没点击具体目录），也可以基于水平生成通用推荐
+    if not page_context:
+        # 获取该水平的根目录名称
+        root_name = f"Level {level}"
+        page_context = f"用户正在学习 {root_name} 的总体内容。"
+    
+    ref_content = auto_generate_reference(level, page_context)
+    if ref_content:
+        # 构建最终显示的消息
+        final_msg = f"📚 **自动推荐的学习资源**\n\n{ref_content}"
+        st.session_state.messages.append({"role": "assistant", "content": final_msg})
+        
+        # 可选：生成语音（如果你不希望自动语音，可以注释掉）
+        audio_bytes, fmt = text_to_speech(final_msg)
+        if audio_bytes:
+            st.session_state.pending_tts = (audio_bytes, fmt)
+        
+        st.session_state.auto_ref_pushed = True
+        # 注意：这里不调用 st.rerun()，因为调用该函数后外部会有 rerun
 
 # ========== 缓存的 AI 回复函数 ==========
 @st.cache_data(ttl=3600, max_entries=100)
@@ -306,7 +275,7 @@ def generate_summary(history, old_summary=""):
         # 如果调用失败，返回旧总结
         return old_summary
 
-# ========== get_ai_reply ==========
+# ========== 修改后的 get_ai_reply ==========
 def get_ai_reply(user_text):
     # 1. 将用户消息加入历史（用于显示和总结）
     st.session_state.messages.append({"role": "user", "content": user_text})
@@ -344,8 +313,307 @@ def get_ai_reply(user_text):
 # ---------- 自定义CSS ----------
 st.markdown(f"""
 <style>
-    /* ... 原有CSS保持不变 ... */
-    /* 这里省略原CSS，你只需保留原来的样式即可 */
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+    body {{
+        {bg_css}
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-color: #f0f0f0;
+    }}
+
+    html, body, .stApp, .main, div[data-testid="stAppViewContainer"],
+    div[data-testid="stHeader"], div[data-testid="stToolbar"],
+    div[data-testid="stVerticalBlock"], div[data-testid="column"],
+    header, footer {{
+        background-color: transparent !important;
+    }}
+
+    #stFooter {{ display: none !important; }}
+    .main {{ padding: 2rem 1rem !important; }}
+
+    html, body, [class*="css"], h1, h2, h3, p, div, span, .stMarkdown {{
+        color: #000000 !important;
+        text-shadow: none !important;
+    }}
+
+    h1 {{
+        font-size: 72px !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.5px;
+        color: #000000 !important;
+        margin-bottom: 16px !important;
+        text-transform: uppercase;
+    }}
+
+    h2 {{
+        font-size: 54px !important;
+        font-weight: 400 !important;
+        color: #000000 !important;
+        margin: 24px 0 8px 0 !important;
+    }}
+
+    h3 {{
+        font-size: 42px !important;
+        font-weight: 500 !important;
+        color: #000000 !important;
+        margin: 16px 0 8px 0 !important;
+    }}
+
+    div[data-testid="column"] .stButton > button {{
+        font-size: 56px !important;
+        font-weight: 700 !important;
+        background-color: transparent !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 8px 0 !important;
+        border-radius: 0 !important;
+        transition: all 0.2s ease !important;
+        width: 100%;
+        text-align: left;
+        margin: 0 !important;
+        line-height: 1.2;
+    }}
+    div[data-testid="column"] .stButton > button:hover {{
+        text-decoration: underline !important;
+        background-color: transparent !important;
+    }}
+
+    .stButton > button {{
+        font-size: 28px !important;
+        font-weight: 500 !important;
+        padding: 20px 24px !important;
+        border-radius: 40px !important;
+        background-color: transparent !important;
+        color: #000000 !important;
+        border: 2px solid rgba(0,0,0,0.3) !important;
+        transition: all 0.2s ease !important;
+        width: 100%;
+        box-shadow: none !important;
+    }}
+
+    .stButton > button:hover {{
+        background-color: rgba(255,255,255,0.3) !important;
+        border-color: #000000 !important;
+    }}
+
+    div[data-testid="stVerticalBlock"] > div {{
+        background-color: rgba(255,255,255,0.4) !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }}
+
+    div[data-testid="stVerticalBlock"] > div h3 {{
+        font-size: 48px !important;
+        font-weight: 500 !important;
+        color: #000000 !important;
+        margin: 0 0 8px 0 !important;
+    }}
+
+    div[data-testid="stVerticalBlock"] > div div {{
+        font-size: 32px !important;
+        color: #333333 !important;
+        margin-bottom: 8px !important;
+    }}
+
+    div[data-testid="stVerticalBlock"] > div p {{
+        font-size: 32px !important;
+        color: #000000 !important;
+    }}
+
+    .breadcrumb {{
+        font-size: 28px !important;
+        color: #333333 !important;
+        padding: 12px 0;
+        border-bottom: 2px solid rgba(0,0,0,0.2);
+        margin-bottom: 24px;
+        font-weight: 400;
+    }}
+
+    .back-button .stButton > button {{
+        background-color: transparent !important;
+        color: #000000 !important;
+        border: none !important;
+        padding: 12px 0 !important;
+        font-size: 28px !important;
+        text-align: left;
+        font-weight: 500 !important;
+        box-shadow: none !important;
+        border-bottom: 2px solid transparent !important;
+    }}
+
+    .back-button .stButton > button:hover {{
+        background-color: transparent !important;
+        border-bottom: 2px solid #000000 !important;
+    }}
+
+    div[data-testid="column"] {{ padding: 8px !important; }}
+
+    hr {{
+        margin: 24px 0 !important;
+        border-color: rgba(0,0,0,0.1) !important;
+    }}
+
+    .chat-float-container {{
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }}
+
+    .chat-panel {{
+        width: 420px;
+        height: 600px;
+        background-color: #ffffff !important;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border: 1px solid rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }}
+
+    .chat-messages-area {{
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+    }}
+
+    .chat-input-area {{
+        padding: 12px 16px;
+        border-top: 1px solid #e0e0e0;
+    }}
+
+    /* 输入区域列布局优化 */
+    .chat-input-area div[data-testid="column"] {{
+        padding: 0 4px !important;
+        display: flex !important;
+        align-items: center !important;
+    }}
+
+    /* 语音输入样式 - 紧凑的小黑框 */
+    .chat-input-area div[data-testid="stAudioInput"] {{
+        margin: 0 !important;
+    }}
+    
+    .chat-input-area div[data-testid="stAudioInput"] > div {{
+        background-color: #2d3748 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        margin: 0 !important;
+        padding: 8px !important;
+        width: 56px !important;
+        height: 56px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+    
+    .chat-input-area div[data-testid="stAudioInput"] button {{
+        color: #ffffff !important;
+        background-color: transparent !important;
+        padding: 0 !important;
+        min-height: auto !important;
+    }}
+
+    /* 文字输入框样式 - 椭圆形，大字体，矮框 */
+    .chat-input-area .stChatInput {{
+        margin: 0 !important;
+    }}
+    .chat-input-area .stChatInput > div {{
+        background-color: #2d3748 !important;
+        border: none !important;
+        border-radius: 28px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 56px !important;
+    }}
+    .chat-input-area .stChatInput input {{
+        font-size: 22px !important;
+        padding: 0 20px !important;
+        background-color: transparent !important;
+        color: #ffffff !important;
+        height: 56px !important;
+        min-height: 56px !important;
+        max-height: 56px !important;
+        border: none !important;
+        line-height: 56px !important;
+    }}
+    .chat-input-area .stChatInput input::placeholder {{
+        font-size: 22px !important;
+        color: #a0aec0 !important;
+    }}
+    
+    /* 移除可能的红色边框 */
+    .chat-input-area .stChatInput > div:focus-within,
+    .chat-input-area .stChatInput input:focus {{
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }}
+
+    .chat-message {{
+        margin-bottom: 16px;
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 8px 0;
+    }}
+
+    .chat-message strong {{
+        font-weight: 600;
+        margin-right: 6px;
+        color: #2d3748;
+    }}
+
+    .clear-button-container .stButton > button {{
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #666666 !important;
+        font-size: 14px !important;
+        padding: 4px 12px !important;
+        margin: 0 !important;
+        width: auto !important;
+        text-decoration: none !important;
+        cursor: pointer;
+        font-weight: 500 !important;
+        border-radius: 16px !important;
+    }}
+    .clear-button-container .stButton > button:hover {{
+        color: #000000 !important;
+        background-color: rgba(0,0,0,0.05) !important;
+    }}
+
+    /* AI按钮样式 - 简洁的圆角按钮外观 */
+    button[data-testid="baseButton-secondary"][key="chat_toggle_btn"],
+    .chat-float-container .stButton button {{
+        background-color: transparent !important;
+        border: 2px solid rgba(0,0,0,0.3) !important;
+        border-radius: 40px !important;
+        padding: 16px 32px !important;
+        font-size: 28px !important;
+        font-weight: 500 !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }}
+    button[data-testid="baseButton-secondary"][key="chat_toggle_btn"]:hover,
+    .chat-float-container .stButton button:hover {{
+        background-color: rgba(255,255,255,0.3) !important;
+        border-color: #000000 !important;
+    }}
+
+    /* 完全隐藏所有音频播放器 */
+    .stAudio {{ display: none !important; }}
+
+    div[data-testid="stAudioInput"] {{ margin: 4px 0 !important; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -357,16 +625,19 @@ with col1:
     if st.button("Level 1", use_container_width=True):
         st.session_state.level = 1
         st.session_state.path = ["LEVEL_I"]
+        st.session_state.auto_ref_pushed = False   # 重置标记，以便重新推送
         st.rerun()
 with col2:
     if st.button("Level 2", use_container_width=True):
         st.session_state.level = 2
         st.session_state.path = ["LEVEL_II"]
+        st.session_state.auto_ref_pushed = False   # 重置标记
         st.rerun()
 with col3:
     if st.button("Level 3", use_container_width=True):
         st.session_state.level = 3
         st.session_state.path = ["LEVEL_III"]
+        st.session_state.auto_ref_pushed = False   # 重置标记
         st.rerun()
 
 if st.session_state.level:
@@ -389,13 +660,149 @@ if st.session_state.level:
         st.markdown("</div>", unsafe_allow_html=True)
 
     def display_node(node):
-        # ... 原有 display_node 代码保持不变 ...
-        pass  # 此处省略，实际使用时请复制原来的 display_node 函数体
+        if "name" in node:
+            st.markdown(f"## {node['name']}")
+        if "notes" in node and node["notes"]:
+            with st.container(border=True):
+                st.markdown(node["notes"])
+        if "examples" in node and node["examples"]:
+            st.markdown("### Example Sentences")
+            cols = st.columns(3)
+            for idx, ex in enumerate(node["examples"]):
+                with cols[idx % 3]:
+                    with st.container(border=True):
+                        st.markdown(f"<div style='font-size:32px;'>{ex}</div>", unsafe_allow_html=True)
+        if "vocabulary" in node and node["vocabulary"]:
+            st.markdown("### Vocabulary")
+            cols = st.columns(3)
+            for idx, item in enumerate(node["vocabulary"]):
+                with cols[idx % 3]:
+                    parts = item.rsplit(" ", 1)
+                    word = parts[0]
+                    pinyin = parts[1] if len(parts) > 1 else ""
+                    with st.container(border=True):
+                        st.markdown(f"### {word}")
+                        if pinyin:
+                            st.markdown(f"<div>{pinyin}</div>", unsafe_allow_html=True)
+        if not any(key in node for key in ["notes", "examples", "vocabulary"]):
+            sub_keys = [k for k in node.keys() if k not in ("name", "notes", "examples", "vocabulary")]
+            if not sub_keys:
+                st.info("This section has no content to display.")
+            else:
+                cols = st.columns(3)
+                for i, key in enumerate(sub_keys):
+                    with cols[i % 3]:
+                        if isinstance(node[key], dict) and "name" in node[key]:
+                            label = node[key]["name"]
+                        else:
+                            label = key
+                        if st.button(label, key=f"dir_{key}", use_container_width=True):
+                            st.session_state.path.append(key)
+                            st.rerun()
 
     display_node(current_node)
-
-    # ========== 新增：自动推送参考资料 ==========
-    auto_push_references(st.session_state.level, current_node)
+    
+    # ========== 新增：自动推送参考消息（在页面显示后触发） ==========
+    # 如果还没有为当前水平推送过，则生成并推送
+    if not st.session_state.auto_ref_pushed and st.session_state.level in st.session_state.reference_links:
+        auto_push_reference(st.session_state.level)
 
 # ---------- 悬浮聊天窗 ----------
-# ... 原有聊天窗口代码保持不变 ...
+with st.container():
+    st.markdown('<div class="chat-float-container">', unsafe_allow_html=True)
+
+    if st.button("AI", key="chat_toggle_btn"):
+        st.session_state.chat_open = not st.session_state.chat_open
+        st.rerun()
+
+    if st.session_state.chat_open:
+        st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
+        
+        # 初始化音频上下文（绕过浏览器自动播放限制）
+        st.markdown('''
+        <script>
+            if (!window.audioContextInitialized) {
+                window.audioContextInitialized = true;
+                // 创建静默音频上下文以启用自动播放
+                var silentAudio = document.createElement('audio');
+                silentAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+                silentAudio.play().catch(function() {});
+            }
+        </script>
+        ''', unsafe_allow_html=True)
+
+        # Clear 按钮
+        st.markdown('<div class="clear-button-container" style="display:flex;justify-content:flex-end;padding:8px 16px 0;">', unsafe_allow_html=True)
+        if st.button("Clear", key="clear_chat"):
+            st.session_state.messages = [m for m in st.session_state.messages if m["role"] == "system"]
+            st.session_state.pending_tts = None
+            st.session_state.last_audio_id = None
+            # 清理总结相关状态
+            st.session_state.conversation_summary = ""
+            st.session_state.conv_history = []
+            st.session_state.user_msg_count = 0
+            st.session_state.auto_ref_pushed = False   # 新增：重置自动推送标记
+            # 可选：删除总结文件
+            if os.path.exists("conversation_summary.txt"):
+                os.remove("conversation_summary.txt")
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # 消息区域
+        st.markdown('<div class="chat-messages-area" id="chat-messages">', unsafe_allow_html=True)
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.markdown(f'<div class="chat-message"><strong>You:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
+            elif msg["role"] == "assistant":
+                st.markdown(f'<div class="chat-message"><strong>AI:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 自动滚动到底部
+        st.markdown('''
+        <script>
+            setTimeout(function() {
+                var chatArea = document.getElementById('chat-messages');
+                if (chatArea) {
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                }
+            }, 100);
+        </script>
+        ''', unsafe_allow_html=True)
+
+        # ========== 修改：自动播放使用 st.audio 并隐藏 ==========
+        if st.session_state.pending_tts:
+            audio_bytes, fmt = st.session_state.pending_tts
+            st.audio(audio_bytes, format=fmt, autoplay=True)
+            st.session_state.pending_tts = None
+
+        # 输入区域
+        st.markdown('<div class="chat-input-area">', unsafe_allow_html=True)
+        
+        # 创建两列布局：语音按钮在左，文字输入在右
+        col_voice, col_text = st.columns([1, 6])
+        
+        with col_voice:
+            # 语音输入 - 小黑框
+            audio_input = st.audio_input("🎤", key="voice_input", label_visibility="collapsed")
+            if audio_input is not None:
+                audio_id = f"{audio_input.name}_{audio_input.size}"
+                if audio_id != st.session_state.last_audio_id:
+                    st.session_state.last_audio_id = audio_id
+                    with st.spinner("Transcribing..."):
+                        transcript = transcribe_audio(audio_input.read())
+                    if transcript and not transcript.startswith("[转录失败"):
+                        with st.spinner("Thinking..."):
+                            get_ai_reply(transcript)
+                        st.rerun()
+        
+        with col_text:
+            # 文字输入 - 椭圆形大字体
+            if prompt := st.chat_input("Type a message...", key="text_input"):
+                with st.spinner("Thinking..."):
+                    get_ai_reply(prompt)
+                st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
