@@ -671,7 +671,7 @@ st.markdown(f"""
         font-family: 'Manrope', sans-serif !important;
         font-size: 16px !important;
         font-weight: 400 !important;
-        background-color: rgba(0,0,0,0.9) !important;
+        background: transparent !important;   /* 去掉黑色背景 *
         opacity: 1 !important;                 /* 保持完全可见 */
         border: none !important;             /* 去掉边框 */
     }}
