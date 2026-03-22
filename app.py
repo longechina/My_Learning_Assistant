@@ -23,7 +23,12 @@ else:
     bg_css = f"background-image: url('data:image/jpeg;base64,{bg_base64}');"
 
 # Page config
-st.set_page_config(layout="wide", page_title="Chinese Learning Assistant")
+st.set_page_config(
+    layout="wide", 
+    page_title="Chinese Learning Assistant",
+    initial_sidebar_state="collapsed",
+    menu_items=None
+)
 
 # ---------- 初始化语言状态 ----------
 if "language" not in st.session_state:
@@ -340,6 +345,52 @@ st.markdown(f"""
         background-attachment: fixed;
     }}
     
+    /* 隐藏Streamlit顶部黑框和工具栏 */
+    header[data-testid="stHeader"] {{
+        display: none !important;
+    }}
+    .stDeployButton {{
+        display: none !important;
+    }}
+    section[data-testid="stSidebar"] {{
+        display: none !important;
+    }}
+    #MainMenu {{
+        display: none !important;
+    }}
+    footer {{
+        display: none !important;
+    }}
+    
+    /* 隐藏弹窗和对话框 */
+    div[role="dialog"] {{
+        display: none !important;
+    }}
+    div[data-testid="stModal"] {{
+        display: none !important;
+    }}
+    .stAlert {{
+        display: none !important;
+    }}
+    
+    /* 隐藏所有覆盖层和遮罩 */
+    div[data-baseweb="drawer"] {{
+        display: none !important;
+    }}
+    div[class*="overlay"] {{
+        display: none !important;
+    }}
+    div[class*="backdrop"] {{
+        display: none !important;
+    }}
+    div[class*="Overlay"] {{
+        display: none !important;
+    }}
+    div[style*="position: fixed"][style*="inset: 0"] {{
+        pointer-events: none !important;
+        background: transparent !important;
+    }}
+    
     /* 语言选择器容器样式 */
     .language-selector {{
         position: fixed;
@@ -357,15 +408,42 @@ st.markdown(f"""
     
     .language-selector label {{
         font-weight: 600;
-        color: #333;
+        color: #000000;
         margin: 0;
+        font-size: 16px;
+    }}
+    
+    /* 语言选择下拉框样式 */
+    .language-selector div[data-baseweb="select"] {{
+        background-color: white !important;
+    }}
+    .language-selector div[data-baseweb="select"] > div {{
+        background-color: white !important;
+        color: #000000 !important;
+        border: 1px solid #ccc !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+    }}
+    /* 下拉菜单本身 */
+    .language-selector div[data-baseweb="popover"] {{
+        z-index: 1001 !important;
+        display: block !important;
+    }}
+    div[role="listbox"] {{
+        background-color: white !important;
+        color: #000000 !important;
+        display: block !important;
+    }}
+    div[role="option"] {{
+        color: #000000 !important;
+        font-weight: 500 !important;
     }}
 
     /* 主标题 */
     h1 {{
         text-align: center;
         color: #000000;
-        font-size: 48px;
+        font-size: 64px;
         font-weight: 700;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         margin-bottom: 30px;
@@ -375,8 +453,8 @@ st.markdown(f"""
     .stButton button {{
         background-color: rgba(255,255,255,0.4) !important;
         color: #000000 !important;
-        font-size: 20px !important;
-        font-weight: 600 !important;
+        font-size: 28px !important;
+        font-weight: 700 !important;
         border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 12px !important;
         padding: 20px !important;
@@ -544,6 +622,17 @@ st.markdown(f"""
     .stAudio {{ display: none !important; }}
 
     div[data-testid="stAudioInput"] {{ margin: 4px 0 !important; }}
+    
+    /* 隐藏所有tooltip和弹窗元素（除了语言选择器） */
+    div[data-baseweb="tooltip"]:not(.language-selector *) {{
+        display: none !important;
+    }}
+    div[data-baseweb="modal"]:not(.language-selector *) {{
+        display: none !important;
+    }}
+    .element-container:has(iframe) {{
+        display: none !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
