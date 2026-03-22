@@ -524,7 +524,7 @@ st.markdown(f"""
         letter-spacing: normal !important;
     }}
 
-    /* ⭐关键修复：让文字真的变大 */
+    /* 关键修复：让文字真的变大 */
     .stButton button > div {{
         font-size: 92px !important;
         font-weight: 800 !important;
@@ -859,7 +859,7 @@ if st.session_state.level:
                     word = parts[0]
                     pinyin = parts[1] if len(parts) > 1 else ""
                     with st.container(border=True):
-                        st.markdown(f"### {word}")
+                        st.markdown(f"## {word}")
                         if pinyin:
                             st.markdown(f"<div>{pinyin}</div>", unsafe_allow_html=True)
         if not any(key in node for key in ["notes", "examples", "vocabulary"]):
