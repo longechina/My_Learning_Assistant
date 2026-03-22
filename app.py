@@ -77,7 +77,8 @@ def transcribe_audio(audio_bytes):
         )
         return transcription.text
     except Exception as e:
-        return f"[转录失败: {e}]"
+        return None
+        
 
 # ---------- 判断文本是否含中文 ----------
 def has_chinese(text):
