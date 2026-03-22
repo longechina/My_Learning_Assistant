@@ -77,8 +77,7 @@ def transcribe_audio(audio_bytes):
         )
         return transcription.text
     except Exception as e:
-        return None
-        
+        return f"[转录失败: {e}]"
 
 # ---------- 判断文本是否含中文 ----------
 def has_chinese(text):
@@ -928,22 +927,14 @@ if st.session_state.chat_open:
     
     with col_voice:
         # 语音输入 - 小黑框
-        audio_input = st.audio_input("◉", key="voice_input")
+        audio_input = st.audio_input("◉", key="voice_input", label_visibility="collapsed")
         if audio_input is not None:
             audio_id = f"{audio_input.name}_{audio_input.size}"
             if audio_id != st.session_state.last_audio_id:
                 st.session_state.last_audio_id = audio_id
                 with st.spinner("Transcribing..."):
-                    try:
-                        audio_bytes = audio_input.read()
-                        transcript = transcribe_audio(audio_bytes)
-                        if not transcript:
-                            # 如果转录失败，设置为空字符串或自定义提示
-                            transcript = ""
-                    except Exception as e:
-                        # 彻底捕获错误，不让 Streamlit 继续抛出
-                        transcript = ""
-                if transcript:
+                    transcript = transcribe_audio(audio_input.read())
+                if transcript and not transcript.startswith("[转录失败"):
                     with st.spinner("Thinking..."):
                         get_ai_reply(transcript)
                     st.rerun()
