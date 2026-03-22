@@ -623,7 +623,6 @@ st.markdown(f"""
     }}
 
 
-
     /* 聊天消息区域 */
     .chat-messages-area {{
         flex: 1;
@@ -675,7 +674,7 @@ st.markdown(f"""
         background-color: rgba(255,255,255,0.4) !important;
         border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 8px !important;
-        padding: 6px 16px !important;
+        padding: 6px 8px !important;
         font-family: 'Manrope', sans-serif !important;
         font-size: 14px !important;
         font-weight: 600 !important;
