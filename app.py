@@ -487,7 +487,6 @@ st.markdown(f"""
         font-family: 'Manrope', sans-serif;
         font-size: 96px;
         font-weight: 800;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         margin-bottom: 40px;
         letter-spacing: -2px;
         line-height: 1.1;
