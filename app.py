@@ -523,11 +523,18 @@ st.markdown(f"""
         box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         letter-spacing: normal !important;
     }}
+
+    /* ⭐关键修复：让文字真的变大 */
+    .stButton button > div {{
+        font-size: 92px !important;
+        font-weight: 800 !important;
+    }}
+
     .stButton button:hover {{
         background-color: rgba(255,255,255,0.6) !important;
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
-    }}
+}}
 
     /* 面包屑导航 */
     .breadcrumb {{
