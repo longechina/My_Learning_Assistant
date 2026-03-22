@@ -536,7 +536,7 @@ st.markdown(f"""
         padding: 10px 24px !important;
     }}
 
-    /* 容器样式 */
+    /* 容器样式（主内容区） */
     div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {{
         background-color: rgba(255,255,255,0.5);
         border-radius: 12px;
@@ -544,6 +544,13 @@ st.markdown(f"""
         margin-bottom: 15px;
         border: none;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }}
+
+    /* 卡片容器（st.container border=True）背景透明度调整 */
+    div[data-testid="stContainer"] {{
+        background-color: rgba(255, 255, 255, 0.9) !important;   /* 修改最后一个数字调整透明度：0=全透，1=不透 */
+        border-radius: 12px !important;
+        border: 1px solid rgba(200, 200, 200, 0.3) !important;
     }}
 
     /* 标题 */
@@ -621,6 +628,7 @@ st.markdown(f"""
         border: 1px solid rgba(0,0,0,0.3) !important;
         background-color: rgba(18,19,28,0.9) !important;
         margin-top: 10px;
+        margin-bottom: 10px;
     }}
 
     /* Clear 按钮和语音按钮样式：透明背景，白色文字 */
@@ -639,8 +647,6 @@ st.markdown(f"""
     div[data-testid="stAudioInput"] button:hover {{
         background-color: rgba(255,255,255,0.4) !important;
     }}
-
-    /* 文本输入框（st.chat_input）样式继承自已有 .stChatInput，无需额外修改 */
 
     /* 完全隐藏所有音频播放器 */
     .stAudio {{
