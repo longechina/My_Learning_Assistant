@@ -648,7 +648,9 @@ st.markdown(f"""
 
     /* 输入区域 */
     .stChatInput {{
-        background-color: rgba(38,39,48,0.9) !important;
+        border-radius: 25px !important;
+        border: 1px solid rgba(0,0,0,0.3) !important;
+        background-color: rgba(10,11,20,0.9) !important;
         font-family: 'Manrope', sans-serif !important;
         font-size: 16px !important;
         font-weight: 400 !important;
