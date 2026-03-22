@@ -144,6 +144,8 @@ if "user_msg_count" not in st.session_state:
 # ========== 自动参考相关状态 ==========
 if "auto_ref_pushed" not in st.session_state:
     st.session_state.auto_ref_pushed = False   # 标记当前水平是否已自动推送
+if "current_recommendations" not in st.session_state:
+    st.session_state.current_recommendations = None  # 存储当前页面的推荐资源
 
 # ---------- 获取当前页面全部内容（完整喂给 AI） ----------
 def get_current_page_full_content():
@@ -234,10 +236,10 @@ Now generate for the topic: {topic}
                 return f"Unable to generate recommendations: {e}"
     return "Unable to generate recommendations after multiple retries."
 
-# ========== 自动推送参考消息到聊天窗口 ==========
+# ========== 自动推送参考消息到页面显示 ==========
 def auto_push_reference(level, path_string):
     """
-    自动在 AI 面板中生成并推送参考消息。
+    自动在页面上生成并显示参考消息。
     仅在首次进入某个水平时调用一次（由 auto_ref_pushed 控制）。
     """
     if st.session_state.auto_ref_pushed:
@@ -247,8 +249,8 @@ def auto_push_reference(level, path_string):
     if full_page_content:
         with st.spinner("Generating recommended resources..."):
             ref_msg = auto_generate_reference(level, full_page_content, path_string)
-        # 将参考消息以 assistant 角色推入对话历史
-        st.session_state.messages.append({"role": "assistant", "content": ref_msg})
+        # 保存到 session_state 用于页面显示
+        st.session_state.current_recommendations = ref_msg
         # 设置标记，避免重复推送
         st.session_state.auto_ref_pushed = True
 
@@ -419,7 +421,7 @@ st.markdown(f"""
     }}
     .language-selector div[data-baseweb="select"] > div {{
         background-color: white !important;
-        color: #FFFFFF !important;
+        color: #000000 !important;
         border: 1px solid #ccc !important;
         font-size: 16px !important;
         font-weight: 500 !important;
@@ -443,7 +445,7 @@ st.markdown(f"""
     h1 {{
         text-align: center;
         color: #000000;
-        font-size: 120px;
+        font-size: 64px;
         font-weight: 700;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         margin-bottom: 30px;
@@ -521,6 +523,24 @@ st.markdown(f"""
     /* 确保所有文本都是黑色 */
     p, div, span {{
         color: #000000 !important;
+    }}
+    
+    /* 推荐资源区域样式 */
+    hr {{
+        margin: 30px 0;
+        border: none;
+        border-top: 2px solid rgba(100,100,100,0.2);
+    }}
+    
+    /* Markdown链接样式 */
+    a {{
+        color: #0066cc !important;
+        text-decoration: none !important;
+        font-weight: 500 !important;
+    }}
+    a:hover {{
+        color: #0052a3 !important;
+        text-decoration: underline !important;
     }}
 
     /* 悬浮AI按钮 */
@@ -658,11 +678,12 @@ with language_col2:
         st.session_state.path = []
         st.session_state.messages = [{"role": "system", "content": system_prompt}]
         st.session_state.auto_ref_pushed = False
+        st.session_state.current_recommendations = None  # 清除推荐
         st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------- 导航和卡片显示 ----------
-st.title("LANGUAGE LEARNING ASSISTANT")
+st.title("CHINESE LEARNING ASSISTANT")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -670,18 +691,21 @@ with col1:
         st.session_state.level = 1
         st.session_state.path = ["LEVEL_I"]
         st.session_state.auto_ref_pushed = False   # 重置标记，以便重新推送
+        st.session_state.current_recommendations = None  # 清除旧的推荐
         st.rerun()
 with col2:
     if st.button("Level 2", use_container_width=True):
         st.session_state.level = 2
         st.session_state.path = ["LEVEL_II"]
         st.session_state.auto_ref_pushed = False   # 重置标记
+        st.session_state.current_recommendations = None  # 清除旧的推荐
         st.rerun()
 with col3:
     if st.button("Level 3", use_container_width=True):
         st.session_state.level = 3
         st.session_state.path = ["LEVEL_III"]
         st.session_state.auto_ref_pushed = False   # 重置标记
+        st.session_state.current_recommendations = None  # 清除旧的推荐
         st.rerun()
 
 if st.session_state.level:
@@ -700,6 +724,8 @@ if st.session_state.level:
         st.markdown("<div class='back-button'>", unsafe_allow_html=True)
         if st.button("Back", key="back_button"):
             st.session_state.path.pop()
+            st.session_state.auto_ref_pushed = False  # 重置以便重新生成
+            st.session_state.current_recommendations = None  # 清除旧的推荐
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -742,9 +768,17 @@ if st.session_state.level:
                             label = key
                         if st.button(label, key=f"dir_{key}", use_container_width=True):
                             st.session_state.path.append(key)
+                            st.session_state.auto_ref_pushed = False  # 重置以便重新生成
+                            st.session_state.current_recommendations = None  # 清除旧的推荐
                             st.rerun()
 
     display_node(current_node)
+    
+    # ========== 显示推荐资源（在页面内容下方） ==========
+    if st.session_state.current_recommendations:
+        st.markdown("---")  # 分隔线
+        with st.container():
+            st.markdown(st.session_state.current_recommendations, unsafe_allow_html=True)
     
     # ========== 自动推送参考消息（在页面显示后触发） ==========
     # 如果还没有为当前水平推送过，则生成并推送
