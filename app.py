@@ -373,32 +373,32 @@ st.markdown(f"""
 
     /* Level按钮 */
     .stButton button {{
-        background-color: rgba(255,255,255,0.2) !important;
+        background-color: rgba(255,255,255,0.4) !important;
         color: #000000 !important;
         font-size: 20px !important;
         font-weight: 600 !important;
-        border: 2px solid #000000 !important;
+        border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 12px !important;
         padding: 20px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
     }}
     .stButton button:hover {{
-        background-color: rgba(255,255,255,0.4) !important;
+        background-color: rgba(255,255,255,0.6) !important;
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
     }}
 
     /* 面包屑导航 */
     .breadcrumb {{
-        background-color: rgba(255,255,255,0.15);
+        background-color: rgba(255,255,255,0.75);
         padding: 12px 20px;
         border-radius: 8px;
         margin-bottom: 20px;
-        font-size: 18px;
+        font-size: 24px;
         color: #000000;
-        font-weight: 500;
-        border: 1px solid rgba(0,0,0,0.1);
+        font-weight: 600;
+        border: none;
     }}
 
     /* Back按钮 */
@@ -406,36 +406,43 @@ st.markdown(f"""
         margin-bottom: 20px;
     }}
     button[key="back_button"] {{
-        background-color: rgba(255,255,255,0.2) !important;
+        background-color: rgba(255,255,255,0.4) !important;
         color: #000000 !important;
         font-size: 16px !important;
         font-weight: 600 !important;
-        border: 2px solid #000000 !important;
+        border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 8px !important;
         padding: 10px 24px !important;
     }}
 
     /* 容器样式 */
     div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {{
-        background-color: rgba(255,255,255,0.15);
+        background-color: rgba(255,255,255,0.85);
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 15px;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: none;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }}
 
     /* 标题 */
     h2 {{
         color: #000000;
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 15px;
+        font-size: 32px;
     }}
     h3 {{
         color: #000000;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 20px;
         margin-bottom: 10px;
+        font-size: 24px;
+    }}
+    
+    /* 确保所有文本都是黑色 */
+    p, div, span {{
+        color: #000000 !important;
     }}
 
     /* 悬浮AI按钮 */
@@ -450,8 +457,8 @@ st.markdown(f"""
         width: 70px !important;
         height: 70px !important;
         border-radius: 50% !important;
-        background-color: rgba(255,255,255,0.2) !important;
-        border: 2px solid #000000 !important;
+        background-color: rgba(255,255,255,0.4) !important;
+        border: 1px solid rgba(100,100,100,0.3) !important;
         font-size: 28px !important;
         font-weight: 700 !important;
         color: #000000 !important;
@@ -464,7 +471,7 @@ st.markdown(f"""
     }}
     button[data-testid="baseButton-secondary"][key="chat_toggle_btn"]:hover,
     .chat-float-container .stButton button:hover {{
-        background-color: rgba(255,255,255,0.4) !important;
+        background-color: rgba(255,255,255,0.6) !important;
         transform: scale(1.1);
     }}
 
@@ -481,7 +488,7 @@ st.markdown(f"""
         display: flex;
         flex-direction: column;
         z-index: 998;
-        border: 2px solid #000000;
+        border: none;
     }}
 
     /* 聊天消息区域 */
@@ -489,7 +496,7 @@ st.markdown(f"""
         flex: 1;
         overflow-y: auto;
         padding: 20px;
-        border-bottom: 2px solid rgba(0,0,0,0.1);
+        border-bottom: 1px solid rgba(200,200,200,0.3);
     }}
     .chat-message {{
         margin-bottom: 15px;
@@ -511,15 +518,15 @@ st.markdown(f"""
     }}
     .stChatInput {{
         border-radius: 25px !important;
-        border: 2px solid #000000 !important;
+        border: 1px solid rgba(100,100,100,0.3) !important;
         background-color: rgba(255,255,255,0.9) !important;
         font-size: 16px !important;
     }}
 
     /* Clear按钮 */
     button[key="clear_chat"] {{
-        background-color: rgba(255,255,255,0.2) !important;
-        border: 2px solid #000000 !important;
+        background-color: rgba(255,255,255,0.4) !important;
+        border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 8px !important;
         padding: 6px 16px !important;
         font-size: 14px !important;
@@ -529,8 +536,8 @@ st.markdown(f"""
     }}
     button[data-testid="baseButton-secondary"][key="chat_toggle_btn"]:hover,
     .chat-float-container .stButton button:hover {{
-        background-color: rgba(255,255,255,0.3) !important;
-        border-color: #000000 !important;
+        background-color: rgba(255,255,255,0.5) !important;
+        border-color: rgba(100,100,100,0.4) !important;
     }}
 
     /* 完全隐藏所有音频播放器 */
