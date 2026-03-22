@@ -515,7 +515,7 @@ st.markdown(f"""
         background-color: rgba(255,255,255,0.4) !important;
         color: #000000 !important;
         font-family: 'Manrope', sans-serif !important;
-        font-size: 72px !important;
+        font-size: 92px !important;
         font-weight: 800 !important;
         border: 1px solid rgba(100,100,100,0.3) !important;
         border-radius: 12px !important;
