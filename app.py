@@ -4,8 +4,13 @@ import io
 import re
 import os
 import time
+import queue
+import threading
+import numpy as np
+import soundfile as sf
 import streamlit as st
 import groq
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase, WebRtcMode
 
 # ---------- 将背景图片转换为 Base64 嵌入 CSS ----------
 def get_base64_of_image(image_path):
@@ -132,6 +137,10 @@ if "voice_mode" not in st.session_state:
     st.session_state.voice_mode = False
 if "last_audio_data" not in st.session_state:
     st.session_state.last_audio_data = None
+if "webrtc_initialized" not in st.session_state:
+    st.session_state.webrtc_initialized = False
+if "webrtc_ctx" not in st.session_state:
+    st.session_state.webrtc_ctx = None
 
 # ========== 对话总结相关状态 ==========
 if "conversation_summary" not in st.session_state:
@@ -324,6 +333,50 @@ Summary:"""
         st.session_state.conv_history = []
     except Exception as e:
         st.warning(f"Failed to generate summary: {e}")
+
+# ---------- 自定义音频处理器：实现语音活动检测和自动录音 ----------
+class VoiceActivityDetector(AudioProcessorBase):
+    def __init__(self):
+        self.audio_queue = queue.Queue()
+        self.recording = False
+        self.silence_start_time = None
+        self.volume_threshold = 0.02
+        self.silence_duration = 3.0
+        self.audio_chunks = []
+        self.lock = threading.Lock()
+        self._recording_status = "Idle"
+
+    @property
+    def recording_status(self):
+        with self.lock:
+            return self._recording_status
+
+    def recv(self, frame):
+        audio = frame.to_ndarray().flatten()
+        rms = np.sqrt(np.mean(audio ** 2))
+
+        with self.lock:
+            if rms > self.volume_threshold:
+                if not self.recording:
+                    self.recording = True
+                    self._recording_status = "Recording"
+                    self.audio_chunks = []
+                    self.silence_start_time = None
+                self.audio_chunks.append(audio)
+            else:
+                if self.recording:
+                    if self.silence_start_time is None:
+                        self.silence_start_time = time.time()
+                    elif time.time() - self.silence_start_time >= self.silence_duration:
+                        self.recording = False
+                        self._recording_status = "Idle"
+                        full_audio = np.concatenate(self.audio_chunks)
+                        self.audio_queue.put(full_audio)
+                        self.audio_chunks = []
+                        self.silence_start_time = None
+                    else:
+                        self.audio_chunks.append(audio)
+        return frame
 
 # ---------- CSS样式 ----------
 st.markdown(f"""
@@ -874,145 +927,64 @@ if st.session_state.chat_open:
         button_label = "Voice Mode" if not st.session_state.voice_mode else "Exit Voice Mode"
         if st.button(button_label, key="voice_toggle", use_container_width=True):
             st.session_state.voice_mode = not st.session_state.voice_mode
-            st.session_state.last_audio_data = None
+            if not st.session_state.voice_mode and st.session_state.webrtc_ctx:
+                # 关闭模式时停止音频流（webrtc_streamer会自动处理）
+                pass
             st.rerun()
 
         if st.session_state.voice_mode:
-            # 自定义 HTML/JS 组件，实现自动录音和状态显示
-            voice_html = """
-            <div id="voice-status" style="margin: 8px 0; text-align: center; font-size: 14px; color: #ffffff;">Requesting microphone...</div>
-            <script>
-            (function() {
-                if (window.voiceRecorderActive) return;
-                window.voiceRecorderActive = true;
+            # 添加手动请求麦克风的按钮
+            if st.button("Request Microphone", key="req_mic", use_container_width=True):
+                st.session_state.webrtc_initialized = True
+                st.rerun()
 
-                const statusDiv = document.getElementById('voice-status');
-                let mediaRecorder = null;
-                let audioChunks = [];
-                let isRecording = false;
-                let silenceTimer = null;
-                let audioContext = null;
-                let source = null;
-                let stream = null;
-                let analyser = null;
-                let silenceDuration = 0;
-                const SILENCE_TIMEOUT = 3000;   // 3 seconds
-                const VOLUME_THRESHOLD = 0.01;
-
-                async function init() {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        window.voiceStream = stream;
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        source = audioContext.createMediaStreamSource(stream);
-                        analyser = audioContext.createAnalyser();
-                        analyser.fftSize = 256;
-                        source.connect(analyser);
-                        statusDiv.innerText = "Listening...";
-                        checkVolume();
-                    } catch (err) {
-                        console.error(err);
-                        statusDiv.innerText = "Microphone access denied or not available.";
-                    }
-                }
-
-                function checkVolume() {
-                    if (!analyser) return;
-                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                    analyser.getByteTimeDomainData(dataArray);
-                    let sum = 0;
-                    for (let i = 0; i < dataArray.length; i++) {
-                        const v = (dataArray[i] - 128) / 128;
-                        sum += v * v;
-                    }
-                    let rms = Math.sqrt(sum / dataArray.length);
-                    if (rms > VOLUME_THRESHOLD) {
-                        // voice detected
-                        if (!isRecording) {
-                            startRecording();
-                        }
-                        clearTimeout(silenceTimer);
-                        silenceTimer = null;
-                    } else {
-                        if (isRecording && !silenceTimer) {
-                            silenceTimer = setTimeout(() => {
-                                if (isRecording) stopRecordingAndSend();
-                            }, SILENCE_TIMEOUT);
-                        }
-                    }
-                    requestAnimationFrame(checkVolume);
-                }
-
-                function startRecording() {
-                    if (!window.voiceStream) return;
-                    audioChunks = [];
-                    mediaRecorder = new MediaRecorder(window.voiceStream);
-                    mediaRecorder.ondataavailable = event => {
-                        if (event.data.size > 0) audioChunks.push(event.data);
-                    };
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64data = reader.result.split(',')[1];
-                            // 通过 Streamlit 组件发送数据
-                            const data = { audio: base64data };
-                            const iframe = document.querySelector('iframe[title="streamlit_voice_recorder"]');
-                            if (iframe && iframe.contentWindow) {
-                                iframe.contentWindow.postMessage(data, '*');
-                            }
-                        };
-                        reader.readAsDataURL(blob);
-                    };
-                    mediaRecorder.start();
-                    isRecording = true;
-                    statusDiv.innerText = "Recording...";
-                }
-
-                function stopRecordingAndSend() {
-                    if (mediaRecorder && isRecording) {
-                        mediaRecorder.stop();
-                        isRecording = false;
-                        statusDiv.innerText = "Listening...";
-                    }
-                    if (silenceTimer) {
-                        clearTimeout(silenceTimer);
-                        silenceTimer = null;
-                    }
-                }
-
-                init();
-            })();
-            </script>
-            """
-            # 使用 st.components.v1.iframe 嵌入自定义 HTML
-            from streamlit.components.v1 import iframe
-            iframe(voice_html, height=50, key="voice_recorder_iframe")
-
-            # 监听来自 iframe 的消息
-            # Streamlit 没有直接监听 postMessage 的内置方法，但可以通过 st.session_state 和 st.experimental_rerun 配合？
-            # 简单方案：在 Python 端轮询某个 session state 变量，但需要 iframe 通过 Streamlit.setComponentValue 传递数据。
-            # 由于 iframe 是独立组件，不能直接修改 session_state，但可以使用 Streamlit 的 component 通信。
-            # 下面使用 st.components.v1.html 并利用其返回值功能，但该组件是静默的，无法主动发送数据。
-            # 更可靠的方式：使用 st.empty 占位符，通过 JavaScript 写入 window 然后 Python 读取？
-            # 不行，因为 Python 无法直接访问浏览器全局变量。
-            # 这里改用 st.components.v1.html 并通过 setComponentValue 将数据传回，但需要动态创建组件并等待。
-            # 为简化，我们使用 st.markdown 中的自定义 HTML 并通过 Streamlit 的 JavaScript API 更新 session_state。
-            # Streamlit 提供了 Streamlit.setComponentValue 用于自定义组件，但需要完整组件定义。
-            # 考虑到复杂性，我们换用 st.audio_input 并隐藏，但用户明确反对。
-            # 鉴于时间，这里采用一个折中：利用 st.empty 和 st.rerun 配合，但需要 iframe 与 Python 通信。
-            # 我们可以创建一个隐藏的 input 元素，通过 JavaScript 改变其 value，然后让 Streamlit 监控该元素的变化。
-            # 但 Streamlit 不会自动监控 DOM 变化。最简便的方式是使用 streamlit-webrtc 但之前失败。
-            # 因此，我们暂且回归到 st.audio_input 并增加自动检测的 JS 代码？但会破坏设计。
-            # 为了尽快解决，我决定提供一个可直接运行的、使用自定义 HTML + 轮询的版本。
-            # 但篇幅所限，这里无法完整实现所有通信。我将简化：语音模式开启后，显示一个按钮"Start Recording"，手动点击录音，但用户要求自动。
-            # 抱歉，当前环境无法提供完全自动且无依赖的完美方案。建议使用 streamlit-webrtc 并调整权限。
-            # 这里提供一个使用 st.audio_input 但通过 JS 自动点击的方案，但这会破坏界面。
-            # 最终，我决定提供 streamlit-webrtc 的修正版本，确保请求麦克风。
-            # 下面保留之前的 webrtc_streamer 代码并修正权限问题。
-            # 为了不破坏现有代码，此处不再提供最终版。但根据你的需求，我将给出一个可行方案。
-            st.info("Voice mode is under development. For now, please use the text input.")
-            pass
+            if st.session_state.webrtc_initialized:
+                # 隐藏 webrtc_streamer 界面
+                st.markdown("""<style>iframe[title="streamlit_webrtc.streamlit_webrtc"] { height: 0px !important; min-height: 0px !important; }</style>""", unsafe_allow_html=True)
+                webrtc_ctx = webrtc_streamer(
+                    key="voice_detector",
+                    mode=WebRtcMode.SENDRECV,
+                    audio_processor_factory=VoiceActivityDetector,
+                    media_stream_constraints={"video": False, "audio": True},
+                    async_processing=True,
+                )
+                st.session_state.webrtc_ctx = webrtc_ctx
+                if webrtc_ctx.audio_processor:
+                    processor = webrtc_ctx.audio_processor
+                    # 显示录音状态
+                    status_placeholder = st.empty()
+                    # 轮询音频队列
+                    try:
+                        audio_data = processor.audio_queue.get_nowait()
+                    except queue.Empty:
+                        audio_data = None
+                    if audio_data is not None:
+                        # 转换为 WAV
+                        buf = io.BytesIO()
+                        sf.write(buf, audio_data, 16000, format="WAV")
+                        buf.seek(0)
+                        audio_bytes = buf.read()
+                        if audio_bytes != st.session_state.last_audio_data:
+                            st.session_state.last_audio_data = audio_bytes
+                            with st.spinner("Transcribing..."):
+                                transcript = transcribe_audio(audio_bytes)
+                            if transcript and not transcript.startswith("[转录失败"):
+                                with st.spinner("Thinking..."):
+                                    get_ai_reply(transcript)
+                                st.rerun()
+                    # 更新状态显示
+                    if processor.recording:
+                        status_placeholder.info("Recording...")
+                    else:
+                        status_placeholder.info("Listening...")
+                else:
+                    st.error("Microphone not ready. Please click 'Request Microphone' again.")
+            else:
+                st.info("Click 'Request Microphone' to start voice mode.")
+        else:
+            # 退出语音模式时清理状态
+            st.session_state.webrtc_initialized = False
+            st.session_state.last_audio_data = None
 
     with col_text:
         if prompt := st.chat_input("Type a message...", key="text_input"):
