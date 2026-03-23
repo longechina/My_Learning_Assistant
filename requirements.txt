@@ -4,4 +4,4 @@ kokoro-onnx
 soundfile
 requests
 beautifulsoup4
-audio-recorder-streamlit
+
