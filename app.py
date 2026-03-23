@@ -194,7 +194,7 @@ def auto_generate_reference(level, full_page_content, path_string):
 Topic summary: {notes if notes else "Basic Chinese learning topic"}
 
 Your task:
-- Search the web to find 3-4 high-quality learning resources (must be valid, provide links) (articles, videos, exercises)
+- Search the web to find 3-4 high-quality learning resources from mainstream medias (articles, videos, exercises)
 - Provide a brief heading and list each resource with a short description and clickable link
 - Keep it concise
 - No emojis!
