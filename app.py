@@ -650,7 +650,7 @@ st.markdown(f"""
     }}
 
     .stButton button:hover {{
-        background-color: rgba(255,255,255,0.6) !important;
+        background-color: rgba(255,255,255,0.5) !important;
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
     }}
