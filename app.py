@@ -211,7 +211,7 @@ Now generate for: {topic}
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="groq/compound-mini",
+                model="openai/gpt-oss-120b",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
                 max_tokens=500,
@@ -280,7 +280,7 @@ def get_ai_reply(user_input):
 
     try:
         response = client.chat.completions.create(
-            model="groq/compound-mini",
+            model="openai/gpt-oss-120b",
             messages=context_msgs,
             temperature=0.7,
             max_tokens=512,
@@ -320,7 +320,7 @@ Conversation:
 Summary:"""
     try:
         response = client.chat.completions.create(
-            model="groq/compound-mini",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": summary_prompt}],
             temperature=0.5,
             max_tokens=200,
