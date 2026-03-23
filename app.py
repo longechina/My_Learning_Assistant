@@ -152,6 +152,12 @@ if "current_recommendations" not in st.session_state:
 if "flip_states" not in st.session_state:
     st.session_state.flip_states = {}
 
+# ========== 搜索相关状态 ==========
+if "search_keyword" not in st.session_state:
+    st.session_state.search_keyword = ""
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
+
 # ---------- 获取当前页面全部内容 ----------
 def get_current_page_full_content():
     if not st.session_state.level or not st.session_state.path:
@@ -174,6 +180,79 @@ def get_current_page_full_content():
     if "vocabulary" in node and node["vocabulary"]:
         parts.append("Vocabulary:\n" + "\n".join(f"  - {v}" for v in node["vocabulary"]))
     return "\n".join(parts)
+
+# ========== 全局搜索函数 ==========
+def search_in_node(node, path_list, level_num, keyword):
+    """递归搜索节点，返回匹配项列表"""
+    matches = []
+    keyword_lower = keyword.lower()
+    
+    # 搜索 name
+    if "name" in node and keyword_lower in node["name"].lower():
+        matches.append({
+            "level": level_num,
+            "path": path_list,
+            "type": "Section",
+            "content": node["name"]
+        })
+    
+    # 搜索 notes
+    if "notes" in node and keyword_lower in node["notes"].lower():
+        # 截取前后文
+        content = node["notes"][:200] + "..." if len(node["notes"]) > 200 else node["notes"]
+        matches.append({
+            "level": level_num,
+            "path": path_list,
+            "type": "Note",
+            "content": content
+        })
+    
+    # 搜索 examples
+    if "examples" in node:
+        for idx, ex in enumerate(node["examples"]):
+            if keyword_lower in ex.lower():
+                matches.append({
+                    "level": level_num,
+                    "path": path_list,
+                    "type": "Example",
+                    "content": ex,
+                    "index": idx
+                })
+    
+    # 搜索 vocabulary
+    if "vocabulary" in node:
+        for idx, item in enumerate(node["vocabulary"]):
+            if keyword_lower in item.lower():
+                matches.append({
+                    "level": level_num,
+                    "path": path_list,
+                    "type": "Vocabulary",
+                    "content": item,
+                    "index": idx
+                })
+    
+    # 递归搜索子节点
+    for key, value in node.items():
+        if isinstance(value, dict) and key not in ("name", "notes", "examples", "vocabulary"):
+            matches.extend(search_in_node(value, path_list + [key], level_num, keyword))
+    
+    return matches
+
+def global_search(keyword):
+    """全局搜索所有级别"""
+    if not keyword.strip():
+        return []
+    results = []
+    for level_num in range(1, 4):
+        level_key = f"Level {level_num}"
+        if level_key in levels_data:
+            root_node = levels_data[level_key]
+            # 根节点可能是一个包含 LEVEL_I, LEVEL_II 等键的字典
+            # 遍历顶层所有键（这些键就是路径的起始）
+            for root_key, root_value in root_node.items():
+                if isinstance(root_value, dict):
+                    results.extend(search_in_node(root_value, [root_key], level_num, keyword))
+    return results
 
 # ========== 自动生成参考消息 ==========
 def auto_generate_reference(level, full_page_content, path_string):
@@ -719,6 +798,11 @@ st.markdown(f"""
     .element-container:has(iframe) {{
         display: none !important;
     }}
+
+    /* 为搜索框预留空间，避免被固定语言选择器覆盖 */
+    div[data-testid="stVerticalBlock"] > div:first-child {{
+        margin-top: 80px;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -745,6 +829,51 @@ with language_col2:
         st.session_state.current_recommendations = None
         st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- 全局搜索框 ----------
+with st.container():
+    search_col1, search_col2 = st.columns([5, 1])
+    with search_col1:
+        search_input = st.text_input("🔍 Search textbook", value=st.session_state.search_keyword, placeholder="Type to search...", key="search_box")
+    with search_col2:
+        if st.button("Clear", key="clear_search"):
+            st.session_state.search_keyword = ""
+            st.session_state.search_results = []
+            st.rerun()
+    
+    # 如果搜索词变化，重新搜索
+    if search_input != st.session_state.search_keyword:
+        st.session_state.search_keyword = search_input
+        if search_input.strip():
+            st.session_state.search_results = global_search(search_input)
+        else:
+            st.session_state.search_results = []
+        st.rerun()
+    
+    # 显示搜索结果
+    if st.session_state.search_keyword and st.session_state.search_results:
+        st.markdown(f"### Search Results for '{st.session_state.search_keyword}'")
+        for res in st.session_state.search_results:
+            # 构建面包屑路径
+            path_str = " > ".join(res["path"])
+            # 显示类型和内容
+            content_preview = res["content"].replace("\n", " ")[:150]
+            with st.container(border=True):
+                cols = st.columns([1, 5])
+                with cols[0]:
+                    st.markdown(f"**{res['type']}**")
+                with cols[1]:
+                    st.markdown(f"{content_preview}")
+                # 跳转按钮
+                if st.button(f"Go to {path_str}", key=f"search_{res['level']}_{'_'.join(res['path'])}_{res['type']}_{res.get('index', '')}"):
+                    st.session_state.level = res["level"]
+                    st.session_state.path = res["path"]
+                    st.session_state.search_keyword = ""
+                    st.session_state.search_results = []
+                    st.rerun()
+        st.markdown("---")
+    elif st.session_state.search_keyword:
+        st.info("No results found.")
 
 # ---------- 导航和卡片显示 ----------
 st.title("TEXTBOOK ASSISTANT")
