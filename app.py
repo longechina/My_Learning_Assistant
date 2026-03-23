@@ -715,7 +715,7 @@ st.markdown(f"""
     }}
 
     /* 确保所有文本都是黑色并使用Manrope字体 */
-    p, div, span {{
+    p, div:not(.language-selector *), span:not(.language-selector *) {{
         color: #000000 !important;
         font-family: 'Manrope', sans-serif !important;
         font-weight: 400 !important;
