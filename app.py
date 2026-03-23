@@ -788,7 +788,6 @@ if st.session_state.chat_open:
         if st.session_state.voice_mode:
             # ========== 官方麦克风（一定会弹出权限）==========
             audio_bytes = st.audio_input(
-                label="🎤 Speak now... (点击麦克风图标开始录音)",
                 sample_rate=16000,
                 key="voice_input"
             )
@@ -802,7 +801,7 @@ if st.session_state.chat_open:
                         with st.spinner("Thinking..."):
                             get_ai_reply(transcript)
                         st.rerun()
-            st.caption("Voice mode active: 点击麦克风图标 → 允许浏览器访问麦克风 → 说话 → 点击停止。第一次会弹出权限窗口，请点击「允许」")
+            st.caption("Voice mode active.")
     with col_text:
         if prompt := st.chat_input("Type a message...", key="text_input"):
             with st.spinner("Thinking..."):
