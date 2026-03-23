@@ -788,6 +788,7 @@ if st.session_state.chat_open:
         if st.session_state.voice_mode:
             # ========== 官方麦克风（一定会弹出权限）==========
             audio_bytes = st.audio_input(
+                "Speak here", 
                 sample_rate=16000,
                 key="voice_input"
             )
