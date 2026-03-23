@@ -148,6 +148,10 @@ if "auto_ref_pushed" not in st.session_state:
 if "current_recommendations" not in st.session_state:
     st.session_state.current_recommendations = None
 
+# ========== 卡片翻转状态 ==========
+if "flip_states" not in st.session_state:
+    st.session_state.flip_states = {}
+
 # ---------- 获取当前页面全部内容 ----------
 def get_current_page_full_content():
     if not st.session_state.level or not st.session_state.path:
@@ -789,31 +793,105 @@ if st.session_state.level:
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # ========== 修改后的 display_node 函数（支持卡片翻转） ==========
     def display_node(node):
+        # 获取当前语言和另一语言
+        current_lang = st.session_state.language
+        other_lang = "English" if current_lang == "Chinese" else "Chinese"
+
+        # 加载另一语言的数据
+        other_levels_data = load_level_data(other_lang)
+        other_node = other_levels_data[f"Level {st.session_state.level}"]
+        # 根据当前路径定位另一语言的节点
+        for key in st.session_state.path:
+            other_node = other_node.get(key, {})
+            if not other_node:
+                other_node = None
+                break
+
         if "name" in node:
             st.markdown(f"## {node['name']}")
+
+        # 笔记部分（不翻转）
         if "notes" in node and node["notes"]:
             with st.container(border=True):
                 st.markdown(node["notes"])
+
+        # 例句部分（可翻转）
         if "examples" in node and node["examples"]:
             st.markdown("### Example Sentences")
             cols = st.columns(3)
             for idx, ex in enumerate(node["examples"]):
                 with cols[idx % 3]:
-                    with st.container(border=True):
-                        st.markdown(f"<div style='font-size:32px;'>{ex}</div>", unsafe_allow_html=True)
+                    # 唯一键
+                    key = f"example_{idx}"
+                    # 获取反面内容（如果另一语言节点存在且有对应索引）
+                    other_ex = None
+                    if other_node and "examples" in other_node and len(other_node["examples"]) > idx:
+                        other_ex = other_node["examples"][idx]
+
+                    # 当前翻转状态
+                    flipped = st.session_state.get("flip_states", {}).get(key, False)
+
+                    # 根据翻转状态显示内容
+                    if flipped:
+                        # 显示反面
+                        display_content = other_ex if other_ex else "(Translation not available)"
+                    else:
+                        # 显示正面
+                        display_content = ex
+
+                    # 卡片按钮
+                    if st.button(display_content, key=f"btn_{key}", use_container_width=True):
+                        # 切换状态
+                        if "flip_states" not in st.session_state:
+                            st.session_state.flip_states = {}
+                        st.session_state.flip_states[key] = not flipped
+                        st.rerun()
+
+        # 词汇部分（可翻转）
         if "vocabulary" in node and node["vocabulary"]:
             st.markdown("### Vocabulary")
             cols = st.columns(3)
             for idx, item in enumerate(node["vocabulary"]):
                 with cols[idx % 3]:
+                    # 正面：解析当前语言的词汇（可能带拼音/音标）
                     parts = item.rsplit(" ", 1)
                     word = parts[0]
                     pinyin = parts[1] if len(parts) > 1 else ""
-                    with st.container(border=True):
-                        st.markdown(f"## {word}")
+
+                    # 反面：从另一语言获取对应词汇
+                    other_item = None
+                    if other_node and "vocabulary" in other_node and len(other_node["vocabulary"]) > idx:
+                        other_item = other_node["vocabulary"][idx]
+                    other_parts = other_item.rsplit(" ", 1) if other_item else ["", ""]
+                    other_word = other_parts[0]
+                    other_pron = other_parts[1] if len(other_parts) > 1 else ""
+
+                    # 唯一键
+                    key = f"vocab_{idx}"
+                    flipped = st.session_state.get("flip_states", {}).get(key, False)
+
+                    # 构建显示内容
+                    if flipped:
+                        # 反面：显示另一语言的词汇 + 发音（如果有）
+                        display_content = other_word
+                        if other_pron:
+                            display_content += f"\n{other_pron}"
+                    else:
+                        # 正面：显示当前语言词汇 + 拼音
+                        display_content = word
                         if pinyin:
-                            st.markdown(f"<div>{pinyin}</div>", unsafe_allow_html=True)
+                            display_content += f"\n{pinyin}"
+
+                    # 卡片按钮
+                    if st.button(display_content, key=f"btn_{key}", use_container_width=True):
+                        if "flip_states" not in st.session_state:
+                            st.session_state.flip_states = {}
+                        st.session_state.flip_states[key] = not flipped
+                        st.rerun()
+
+        # 子目录导航（保持原有逻辑）
         if not any(key in node for key in ["notes", "examples", "vocabulary"]):
             sub_keys = [k for k in node.keys() if k not in ("name", "notes", "examples", "vocabulary")]
             if not sub_keys:
@@ -830,6 +908,8 @@ if st.session_state.level:
                             st.session_state.path.append(key)
                             st.session_state.auto_ref_pushed = False
                             st.session_state.current_recommendations = None
+                            # 路径改变时清空翻转状态（可选，提升体验）
+                            st.session_state.flip_states = {}
                             st.rerun()
 
     display_node(current_node)
