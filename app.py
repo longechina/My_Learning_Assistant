@@ -477,7 +477,7 @@ st.markdown(f"""
         {bg_css}
         background-size: cover;
         background-position: center;
-        background-attachment: scroll;
+        background-attachment: fixed;
         font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }}
 
