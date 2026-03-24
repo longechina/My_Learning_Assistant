@@ -1,5 +1,5 @@
 # Chinese Learning Materials – User Guide
-
+The background image is from: [Teddy Ninh](https://www.teddyninh.com/projects/google-illustrations)
 This guide explains how to use the Chinese learning materials website provided in this project.
 
 ---
@@ -27,9 +27,11 @@ Example screenshot:
 
 ## 3. Wait for Recommendations
 
-Please wait a moment. The model will generate learning material recommendations based on your specified links and the current page theme.  
+Please wait a moment. The model will generate learning material recommendations based on the specified links & key words that I wrote on script and the current page theme.  
 
 For example, if the current theme is **Make small talk**, the recommended links may include:
+![03](03.png)
+
 
 - **Youtube**  
   ![04](04.png)  
