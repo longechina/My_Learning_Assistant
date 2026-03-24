@@ -1251,18 +1251,24 @@ elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_n
         # 显示当前选择的考试名称
         st.markdown(f"## {st.session_state.selected_nemt_cet}")
         
-        # 获取所有子目录
-        sub_keys = [k for k in data.keys() if isinstance(data[k], dict)]
+        # 获取所有子目录（数字编号的目录，如 "0", "1", "2"...）
+        # 过滤掉非数字键，只显示目录内容
+        sub_keys = []
+        for k in data.keys():
+            if isinstance(data[k], dict):
+                # 获取这个子目录下的第一个键作为目录名
+                inner_dict = data[k]
+                if inner_dict:
+                    first_key = list(inner_dict.keys())[0]
+                    sub_keys.append((k, first_key))  # 保存编号和目录名
+        
         if sub_keys:
             cols = st.columns(3)
-            for i, key in enumerate(sub_keys):
+            for i, (num_key, dir_name) in enumerate(sub_keys):
                 with cols[i % 3]:
-                    if isinstance(data[key], dict) and "name" in data[key]:
-                        label = data[key]["name"]
-                    else:
-                        label = key
-                    if st.button(label, key=f"nemt_dir_{key}", use_container_width=True):
-                        st.session_state.nemt_cet_path.append(key)
+                    # 只显示目录名称，不显示数字编号
+                    if st.button(dir_name, key=f"nemt_dir_{num_key}", use_container_width=True):
+                        st.session_state.nemt_cet_path.append(num_key)
                         st.rerun()
         else:
             st.info("No content available.")
@@ -1275,102 +1281,86 @@ elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_n
                 st.error("Path error. Please go back.")
                 st.stop()
         
-        bread = " > ".join(st.session_state.nemt_cet_path)
+        # 获取当前节点的第一个键（目录名称）作为面包屑显示
+        if isinstance(current_node, dict) and len(current_node) > 0:
+            current_dir_name = list(current_node.keys())[0] if current_node else ""
+        else:
+            current_dir_name = ""
+        
+        # 构建面包屑路径（只显示目录名称，不显示数字编号）
+        bread_parts = []
+        temp_path = []
+        temp_data = data
+        for path_key in st.session_state.nemt_cet_path:
+            temp_data = temp_data.get(path_key, {})
+            if isinstance(temp_data, dict) and len(temp_data) > 0:
+                dir_name = list(temp_data.keys())[0]
+                bread_parts.append(dir_name)
+        bread = " > ".join(bread_parts)
         st.markdown(f"<div class='breadcrumb'>{bread}</div>", unsafe_allow_html=True)
         
         # Back 按钮
-        if len(st.session_state.nemt_cet_path) > 1:
+        if len(st.session_state.nemt_cet_path) > 0:
             st.markdown("<div class='back-button'>", unsafe_allow_html=True)
             if st.button("Back", key="nemt_back_button"):
                 st.session_state.nemt_cet_path.pop()
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         
-        # 显示内容
-        if "name" in current_node:
-            st.markdown(f"## {current_node['name']}")
+        # 显示当前节点的内容
+        # 获取实际内容节点（去掉编号层）
+        content_node = current_node
+        if isinstance(content_node, dict):
+            # 获取实际内容（如果有嵌套）
+            for k, v in content_node.items():
+                if isinstance(v, dict):
+                    content_node = v
+                    break
+        
+        # 显示目录名称（不带编号）
+        if "name" in content_node:
+            st.markdown(f"## {content_node['name']}")
+        elif current_dir_name:
+            st.markdown(f"## {current_dir_name}")
         
         # 显示 notes（如果有）
-        if "notes" in current_node and current_node["notes"]:
+        if "notes" in content_node and content_node["notes"]:
             with st.container(border=True):
-                st.markdown(current_node["notes"])
+                st.markdown(content_node["notes"])
         
-        # 显示 words（单词列表）- 使用语言模型翻译
-        if "words" in current_node and current_node["words"]:
+        # 显示 words（单词列表）- 直接显示所有单词，不用卡片翻转
+        if "words" in content_node and content_node["words"]:
             st.markdown("### Words")
+            # 将字符串按 " / " 分割成列表
+            words_list = content_node["words"].split(" / ")
             
-            # 使用缓存来存储翻译结果，避免重复调用API
-            if "translation_cache" not in st.session_state:
-                st.session_state.translation_cache = {}
-            
-            cols = st.columns(3)
-            for idx, word_item in enumerate(current_node["words"]):
-                with cols[idx % 3]:
-                    # 解析单词（可能包含词性等信息）
-                    if isinstance(word_item, dict):
-                        word = word_item.get("word", "")
-                        definition = word_item.get("definition", "")
-                    else:
-                        # 如果是字符串，尝试分割
-                        parts = str(word_item).split(" ", 1)
-                        word = parts[0]
-                        definition = parts[1] if len(parts) > 1 else ""
-                    
-                    # 获取翻译（如果目标语言是中文，翻译为中文；如果是英文，翻译为英文）
-                    target_lang = "Chinese" if st.session_state.language == "Chinese" else "English"
-                    cache_key = f"{word}_{target_lang}"
-                    
-                    if cache_key in st.session_state.translation_cache:
-                        translation = st.session_state.translation_cache[cache_key]
-                    else:
-                        with st.spinner(f"Translating {word}..."):
-                            translation = translate_word(word, target_lang)
-                            st.session_state.translation_cache[cache_key] = translation
-                    
-                    # 唯一键
-                    key = f"nemt_word_{idx}"
-                    flipped = st.session_state.get("flip_states", {}).get(key, False)
-                    
-                    # 构建显示内容
-                    if flipped:
-                        # 显示翻译
-                        display_content = translation
-                        if definition:
-                            display_content += f"\n\n{definition}"
-                    else:
-                        # 显示原词
-                        display_content = word
-                        if definition:
-                            display_content += f"\n\n{definition}"
-                    
-                    # 卡片按钮
-                    if st.button(display_content, key=f"btn_{key}", use_container_width=True):
-                        if "flip_states" not in st.session_state:
-                            st.session_state.flip_states = {}
-                        st.session_state.flip_states[key] = not flipped
-                        st.rerun()
+            # 直接显示所有单词，用换行或列表形式
+            for word in words_list:
+                st.markdown(f"- {word}")
         
         # 显示 examples（如果有）
-        if "examples" in current_node and current_node["examples"]:
+        if "examples" in content_node and content_node["examples"]:
             st.markdown("### Example Sentences")
-            cols = st.columns(2)
-            for idx, ex in enumerate(current_node["examples"]):
-                with cols[idx % 2]:
-                    st.markdown(f"- {ex}")
+            for ex in content_node["examples"]:
+                st.markdown(f"- {ex}")
         
-        # 显示子目录
-        sub_keys = [k for k in current_node.keys() if k not in ("name", "notes", "examples", "words")]
-        if sub_keys:
+        # 显示子目录（下一级）
+        # 获取所有子目录（数字编号的目录）
+        sub_items = []
+        for k, v in current_node.items():
+            if isinstance(v, dict):
+                # 获取子目录名称
+                if len(v) > 0:
+                    first_key = list(v.keys())[0]
+                    sub_items.append((k, first_key))
+        
+        if sub_items:
             st.markdown("### Sections")
             cols = st.columns(3)
-            for i, key in enumerate(sub_keys):
+            for i, (num_key, dir_name) in enumerate(sub_items):
                 with cols[i % 3]:
-                    if isinstance(current_node[key], dict) and "name" in current_node[key]:
-                        label = current_node[key]["name"]
-                    else:
-                        label = key
-                    if st.button(label, key=f"nemt_subdir_{key}", use_container_width=True):
-                        st.session_state.nemt_cet_path.append(key)
+                    if st.button(dir_name, key=f"nemt_subdir_{num_key}", use_container_width=True):
+                        st.session_state.nemt_cet_path.append(num_key)
                         st.rerun()
 
 # ---------- 悬浮聊天窗（固定在右下角） ----------
