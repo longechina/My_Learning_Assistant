@@ -2,6 +2,8 @@
 
 This guide explains how to use the Chinese learning materials website provided in this project.
 
+- Website: [Language textbook assitant](https://longee.streamlit.app/)
+
 - The background image is from: [Teddy Ninh](https://www.teddyninh.com/projects/google-illustrations)
 
 ---
