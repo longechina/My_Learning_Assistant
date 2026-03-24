@@ -2,7 +2,7 @@
 
 > A very small personal dataset built purely for learning programming and natural language processing (NLP). Nothing serious here.
 
-🌐 Companion website: [chineselearning-longe.streamlit.app](https://chineselearning-longe.streamlit.app)
+🌐 Companion website: [chineselearning-longe.streamlit.app](https://longee.streamlit.app/)
 
 ---
 
