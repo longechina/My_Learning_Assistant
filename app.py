@@ -986,6 +986,7 @@ Total: X/5"""
                 evaluation = eval_response.choices[0].message.content.strip()
                 
                 # 保存到 feedback.md
+                # 保存到 feedback.md（直接保存完整的 quiz 内容）
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 entry = f"""
 ## Quiz Record - {timestamp}
@@ -993,8 +994,8 @@ Total: X/5"""
 **Topic:** {st.session_state.current_quiz.get("topic", "General")}
 **Mode:** {st.session_state.language}
 
-### Questions:
-{chr(10).join([f"{i+1}. {q}" for i, q in enumerate(questions)])}
+### Quiz:
+{st.session_state.current_quiz.get("quiz_text", "No quiz text")}
 
 ### User Answers:
 {chr(10).join([f"{i+1}. {st.session_state.quiz_answers.get(i+1, 'No answer')}" for i in range(len(questions))])}
@@ -1006,8 +1007,7 @@ Total: X/5"""
 """
                 with open("feedback.md", "a", encoding="utf-8") as f:
                     f.write(entry)
-                save_to_github("feedback.md", entry, f"Add quiz record - {timestamp}")
-                
+                save_to_github("feedback.md", entry, f"Add quiz record - {timestamp}")      
                 reply = evaluation + "\n\nGreat job! Let me know if you have any questions about the feedback."
                 
                 # 重置 quiz 状态
