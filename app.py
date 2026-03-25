@@ -1382,7 +1382,7 @@ st.markdown(f"""
     }}
 
     p, div, span {{
-        color: #000000 !important;
+        color: #FFFFFF !important;
         font-family: 'Manrope', sans-serif !important;
         font-weight: 400 !important;
         line-height: 1.6 !important;
