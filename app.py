@@ -967,9 +967,9 @@ def get_ai_reply(user_input):
     
     # 如果 Quiz 处于活跃状态，处理 Quiz 答案
     if st.session_state.quiz_active and st.session_state.current_quiz:
-        # 获取问题列表
         questions = st.session_state.current_quiz.get("questions", [])
         
+        # 检查用户是否在请求答案
         if user_input.lower().strip() in ["give me answers", "show answers", "give answers", "show me the answers"]:
             reply = "I'd be happy to help! Let's go through the answers together. Which question would you like me to explain first?"
             st.session_state.quiz_active = False
@@ -988,8 +988,21 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
         
-        # 收集答案
-        st.session_state.quiz_answers[len(st.session_state.quiz_answers) + 1] = user_input
+        # ========== 解析一次性答案 ==========
+        user_input_lower = user_input.lower().strip()
+        
+        # 尝试匹配 "1. A, 2. B, 3. C" 格式
+        # 匹配数字后跟 . : 或空格，然后跟答案内容
+        answer_pattern = re.findall(r'(\d+)[\.\:\s]+([^,]+?)(?=\s*\d+[\.\:\s]|$)', user_input)
+        
+        if answer_pattern and len(answer_pattern) >= len(questions):
+            # 一次性回答，直接填充所有答案
+            for i, (num, ans) in enumerate(answer_pattern):
+                if i < len(questions):
+                    st.session_state.quiz_answers[int(num)] = ans.strip()
+        else:
+            # 单题回答
+            st.session_state.quiz_answers[len(st.session_state.quiz_answers) + 1] = user_input
         
         # 检查是否已经回答了所有问题
         if len(st.session_state.quiz_answers) >= len(questions):
@@ -1022,7 +1035,15 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
         else:
-            reply = f"Please answer question {len(st.session_state.quiz_answers) + 1}:"
+            # 还有更多问题
+            next_q_num = len(st.session_state.quiz_answers) + 1
+            if next_q_num <= len(questions):
+                # 从问题列表中获取当前问题文本
+                current_q_text = questions[next_q_num - 1] if next_q_num - 1 < len(questions) else f"Question {next_q_num}"
+                reply = f"Please answer question {next_q_num}: {current_q_text}"
+            else:
+                reply = f"Please answer the remaining questions."
+            
             st.session_state.messages.append({"role": "assistant", "content": reply})
             st.session_state.conv_history.append({"role": "assistant", "content": reply})
             
