@@ -336,19 +336,19 @@ Your task:
 Use these rules to generate links:
 - YouTube: https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+english+learning
 - Quizlet: https://quizlet.com/search?query={topic}+vocabulary
-- Cambridge Dictionary: https://dictionary.cambridge.org/dictionary/english/{topic.split()[-1] if topic else 'vocabulary'}
+- StackExchange: https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'}
 
 Example format:
 【Recommended Resources】
 
-- YouTube: Explanation video  
+- YouTube: Beginner explanation video  
   [Watch](https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+english+learning)
 
 - Quizlet: Flashcards for practice  
   [Practice](https://quizlet.com/search?query={topic}+vocabulary)
 
-- Cambridge Dictionary: Word definition and examples  
-  [Explore](https://dictionary.cambridge.org/dictionary/english/{topic.split()[-1] if topic else 'vocabulary'})
+- English StackExchange: Community Q&A discussion  
+  [Explore](https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'})
 
 Now generate for: {topic}
 """
