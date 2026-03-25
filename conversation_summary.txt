@@ -8,3 +8,8 @@ The assistant introduced a Level I Chinese lesson on narrating past experience
 The assistant introduced basic Chinese greetings and self‑introduction vocabulary, then explained the meaning and composition of the word 朋友, using examples and analogies. Afterward, the assistant provided a short quiz asking the user to identify characters, meanings, and construct a farewell phrase, which the user requested to see.
 
 ---
+
+## Conversation Summary - 2026-03-25 03:37:29
+The assistant introduced Chinese sentence patterns for making and canceling appointments, listing key vocabulary such as 预订, 取消, 时间, 房间, 可以, 吗, and gave example sentences plus a practice task. When the user asked for word‑by‑
+
+---
