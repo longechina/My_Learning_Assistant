@@ -940,24 +940,43 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
         
-        # ========== 解析用户答案 ==========
+        # ========== 解析用户答案（支持多行）==========
         user_input_lower = user_input.lower().strip()
         
-        # 尝试匹配 "1. A, 2. B, 3. C" 或 "1- A" 等格式
-        # 匹配数字后跟 . : - 或空格，然后跟答案内容
-        answer_pattern = re.findall(r'(\d+)[\.\:\-\s]+([^,]+?)(?=\s*\d+[\.\:\-\s]|$)', user_input)
+        # 先按行分割，支持多行输入
+        lines = user_input.split('\n')
+        all_matches = []
         
-        if answer_pattern:
-            # 有编号格式的回答（可能是部分或全部）
-            for num_str, ans in answer_pattern:
-                q_num = int(num_str)
+        # 逐行解析
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            # 匹配每行的 "1. A" 或 "1: A" 或 "1- A" 或 "1 A" 格式
+            match = re.match(r'^(\d+)[\.\:\-\s]+(.+)$', line)
+            if match:
+                q_num = int(match.group(1))
+                ans = match.group(2).strip()
+                all_matches.append((q_num, ans))
+        
+        if all_matches:
+            # 有多行格式的回答
+            for q_num, ans in all_matches:
                 if 1 <= q_num <= len(questions):
-                    st.session_state.quiz_answers[q_num] = ans.strip()
+                    st.session_state.quiz_answers[q_num] = ans
         else:
-            # 没有编号，当作顺序回答（回答当前需要回答的问题）
-            current_q_num = len(st.session_state.quiz_answers) + 1
-            if current_q_num <= len(questions):
-                st.session_state.quiz_answers[current_q_num] = user_input
+            # 尝试匹配单行 "1. A, 2. B, 3. C" 格式
+            answer_pattern = re.findall(r'(\d+)[\.\:\-\s]+([^,]+?)(?=\s*\d+[\.\:\-\s]|$)', user_input)
+            if answer_pattern:
+                for num_str, ans in answer_pattern:
+                    q_num = int(num_str)
+                    if 1 <= q_num <= len(questions):
+                        st.session_state.quiz_answers[q_num] = ans.strip()
+            else:
+                # 没有编号，当作顺序回答（回答当前需要回答的问题）
+                current_q_num = len(st.session_state.quiz_answers) + 1
+                if current_q_num <= len(questions):
+                    st.session_state.quiz_answers[current_q_num] = user_input
         
         # 检查是否已经回答了所有问题
         if len(st.session_state.quiz_answers) >= len(questions):
