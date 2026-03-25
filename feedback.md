@@ -47,3 +47,25 @@
 **Score:** 0/3
 
 ---
+
+## Quiz Record - 2026-03-25 02:51:15
+
+**Topic:** Give a simple narration of an experience
+**Questions:**
+1. Fill in the blank with a complete sentence: Use **昨天**, **去**, and **了** to describe an activity you did yesterday.
+2. Choose the correct sentence that properly uses the sequence words **先** and **然后** to narrate an experience:
+3. Explain the difference in meaning and usage between the particles **过** and **了** when they appear after a verb in a simple narration of a past experience.
+
+**User Answers:**
+1. Pass
+2. pass
+3. pass
+
+**Feedback:**
+- Q1: ✅ Correct
+- Q2: ✅ Correct
+- Q3: ✅ Correct
+
+**Score:** 0/3
+
+---
