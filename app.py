@@ -144,42 +144,6 @@ if "quiz_answers" not in st.session_state:
 if "quiz_asked" not in st.session_state:
     st.session_state.quiz_asked = False
 
-# ---------- 保存 Quiz 到 feedback.md ----------
-def save_quiz_to_feedback(topic, questions, user_answers, feedback, score, total):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"""
-## Quiz Record - {timestamp}
-
-**Topic:** {topic}
-**Questions:**
-{chr(10).join([f"{i+1}. {q}" for i, q in enumerate(questions)])}
-
-**User Answers:**
-{chr(10).join([f"{i+1}. {user_answers.get(i+1, 'No answer')}" for i in range(len(questions))])}
-
-**Feedback:**
-{chr(10).join([f"- Q{i+1}: {'✅ Correct' if feedback[i] else '❌ Incorrect'}" for i in range(len(questions))])}
-
-**Score:** {score}/{total}
-
----
-"""
-    existing_content = ""
-    try:
-        with open("feedback.md", "r", encoding="utf-8") as f:
-            existing_content = f.read()
-    except FileNotFoundError:
-        pass
-    
-    new_content = existing_content + entry if existing_content else "# Quiz Records\n\n" + entry
-    save_to_github("feedback.md", new_content, f"Add quiz record - {timestamp}")
-    
-    try:
-        with open("feedback.md", "w", encoding="utf-8") as f:
-            f.write(new_content)
-    except Exception as e:
-        logger.error(f"Failed to save local feedback: {e}")
-
 
 # ---------- 保存对话总结到 GitHub ----------
 def save_conversation_summary(summary):
@@ -866,18 +830,13 @@ def get_ai_reply(user_input):
             return
         
         # ========== 解析用户答案（支持多行）==========
-        user_input_lower = user_input.lower().strip()
-        
-        # 先按行分割，支持多行输入
         lines = user_input.split('\n')
         all_matches = []
         
-        # 逐行解析
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            # 匹配每行的 "1. A" 或 "1: A" 或 "1- A" 或 "1 A" 格式
             match = re.match(r'^(\d+)[\.\:\-\s]+(.+)$', line)
             if match:
                 q_num = int(match.group(1))
@@ -885,7 +844,7 @@ def get_ai_reply(user_input):
                 all_matches.append((q_num, ans))
         
         if all_matches:
-            # 有多行格式的回答
+            # 有多行格式的回答，直接填充所有答案
             for q_num, ans in all_matches:
                 if 1 <= q_num <= len(questions):
                     st.session_state.quiz_answers[q_num] = ans
@@ -898,37 +857,91 @@ def get_ai_reply(user_input):
                     if 1 <= q_num <= len(questions):
                         st.session_state.quiz_answers[q_num] = ans.strip()
             else:
-                # 没有编号，当作顺序回答（回答当前需要回答的问题）
+                # 没有编号，当作顺序回答
                 current_q_num = len(st.session_state.quiz_answers) + 1
                 if current_q_num <= len(questions):
                     st.session_state.quiz_answers[current_q_num] = user_input
         
-        # 检查是否已经回答了所有问题
+        # ========== 关键修复：每次输入后都检查是否已完成 ==========
+        # 如果已经收集到所有答案，立即评估
         if len(st.session_state.quiz_answers) >= len(questions):
-            # ========== 直接让 AI 评估，不做解析 ==========
+            # 构建问题和答案列表
             qa_list = []
             for i, q in enumerate(questions):
                 user_ans = st.session_state.quiz_answers.get(i+1, "No answer")
-                qa_list.append(f"问题 {i+1}: {q}\n你的答案: {user_ans}")
+                qa_list.append(f"Question {i+1}: {q}\nYour answer: {user_ans}")
             
-            eval_prompt = f"""请评估以下每个问题的答案是否正确。如果错误，请给出简短解释。保持简洁。
+            # 根据模式选择评估提示
+            if st.session_state.language == "Chinese":
+                eval_prompt = f"""You are an English teacher teaching Chinese. Follow these teaching principles:
 
+{TEACHING_PRINCIPLES}
+
+For each question:
+- If the answer is correct, confirm it briefly
+- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
+  1. Explain why it's wrong (briefly)
+  2. Ask a Socratic question to help the student discover the correct answer
+
+Quiz Questions and Answers:
 {chr(10).join(qa_list)}
 
-请用以下格式返回：
-1: [正确/错误] (如果错误，加解释)
-2: [正确/错误] (如果错误，加解释)
-3: [正确/错误] (如果错误，加解释)
-4: [正确/错误] (如果错误，加解释)
-5: [正确/错误] (如果错误，加解释)
-总分: X/5"""
+Return in this format:
+1: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+2: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+3: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+4: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+5: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+Total: X/5"""
+            elif st.session_state.language == "English":
+                eval_prompt = f"""You are an English teacher. Follow these teaching principles:
+
+{TEACHING_PRINCIPLES}
+
+For each question:
+- If the answer is correct, confirm it briefly
+- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
+  1. Explain why it's wrong (briefly)
+  2. Ask a Socratic question to help the student discover the correct answer
+
+Quiz Questions and Answers:
+{chr(10).join(qa_list)}
+
+Return in this format:
+1: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+2: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+3: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+4: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+5: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+Total: X/5"""
+            else:
+                eval_prompt = f"""You are an English exam preparation teacher. Follow these teaching principles:
+
+{TEACHING_PRINCIPLES}
+
+For each question:
+- If the answer is correct, confirm it briefly
+- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
+  1. Explain why it's wrong (briefly)
+  2. Ask a Socratic question to help the student discover the correct answer
+
+Quiz Questions and Answers:
+{chr(10).join(qa_list)}
+
+Return in this format:
+1: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+2: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+3: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+4: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+5: [Correct/Incorrect] - [if incorrect: brief explanation + Socratic question]
+Total: X/5"""
             
             try:
                 eval_response = client.chat.completions.create(
                     model="openai/gpt-oss-20b",
                     messages=[{"role": "user", "content": eval_prompt}],
-                    temperature=0.2,
-                    max_tokens=500,
+                    temperature=0.3,
+                    max_tokens=800,
                 )
                 evaluation = eval_response.choices[0].message.content.strip()
                 
@@ -938,54 +951,55 @@ def get_ai_reply(user_input):
 ## Quiz Record - {timestamp}
 
 **Topic:** {st.session_state.current_quiz.get("topic", "General")}
+**Mode:** {st.session_state.language}
 
 {evaluation}
 
 ---
 """
-                existing_content = ""
-                try:
-                    with open("feedback.md", "r", encoding="utf-8") as f:
-                        existing_content = f.read()
-                except FileNotFoundError:
-                    pass
-                
-                new_content = existing_content + entry if existing_content else "# Quiz Records\n\n" + entry
-                save_to_github("feedback.md", new_content, f"Add quiz record - {timestamp}")
-                
-                with open("feedback.md", "w", encoding="utf-8") as f:
-                    f.write(new_content)
+                with open("feedback.md", "a", encoding="utf-8") as f:
+                    f.write(entry)
+                save_to_github("feedback.md", entry, f"Add quiz record - {timestamp}")
                 
                 reply = evaluation + "\n\nGreat job! Let me know if you have any questions about the feedback."
                 
+                # 重置 quiz 状态
+                st.session_state.quiz_active = False
+                st.session_state.current_quiz = None
+                st.session_state.quiz_answers = {}
+                st.session_state.quiz_asked = False
+                
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.session_state.conv_history.append({"role": "assistant", "content": reply})
+                
+                try:
+                    audio_bytes, fmt = text_to_speech(reply)
+                    if audio_bytes:
+                        st.session_state.pending_tts = (audio_bytes, fmt)
+                except Exception as e:
+                    logger.error(f"TTS error: {e}")
+                return
+                
             except Exception as e:
                 logger.error(f"Evaluation error: {e}")
-                reply = "Unable to evaluate. Please try again."
-            
-            st.session_state.quiz_active = False
-            st.session_state.current_quiz = None
-            st.session_state.quiz_answers = {}
-            st.session_state.quiz_asked = False
-            
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-            st.session_state.conv_history.append({"role": "assistant", "content": reply})
-            
-            try:
-                audio_bytes, fmt = text_to_speech(reply)
-                if audio_bytes:
-                    st.session_state.pending_tts = (audio_bytes, fmt)
-            except Exception as e:
-                logger.error(f"TTS error: {e}")
-            return
+                reply = f"Evaluation failed: {str(e)}\n\nPlease try again."
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.session_state.conv_history.append({"role": "assistant", "content": reply})
+                try:
+                    audio_bytes, fmt = text_to_speech(reply)
+                    if audio_bytes:
+                        st.session_state.pending_tts = (audio_bytes, fmt)
+                except Exception as e:
+                    logger.error(f"TTS error: {e}")
+                return
         else:
-            # 找出下一个未回答的问题编号
+            # 还没答完所有问题，提示下一个
             answered = set(st.session_state.quiz_answers.keys())
             next_q_num = 1
             while next_q_num in answered:
                 next_q_num += 1
             
             if next_q_num <= len(questions):
-                # 从问题列表中获取当前问题文本
                 current_q_text = questions[next_q_num - 1] if next_q_num - 1 < len(questions) else f"Question {next_q_num}"
                 reply = f"Please answer question {next_q_num}: {current_q_text}\n\nUse format: '{next_q_num}. answer' (e.g., '1. A')"
             else:
@@ -1002,6 +1016,7 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
     
+ 
     # ========== 正常处理用户输入（非 Quiz 状态）==========
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.session_state.user_msg_count += 1
@@ -1052,41 +1067,6 @@ def get_ai_reply(user_input):
 
     if st.session_state.user_msg_count % 5 == 0 and st.session_state.user_msg_count > 0:
         generate_and_save_summary()
-
-# ========== 生成并保存对话总结 ==========
-def generate_and_save_summary():
-    if not st.session_state.conv_history:
-        return
-
-    conv_text = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in st.session_state.conv_history])
-
-    summary_prompt = f"""The following is a conversation between a user and an AI Chinese learning assistant.
-Please provide a concise summary (2-3 sentences) covering the main topics discussed.
-
-Conversation:
-{conv_text}
-
-Summary:"""
-    try:
-        response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
-            messages=[{"role": "user", "content": summary_prompt}],
-            temperature=0.5,
-            max_tokens=200,
-        )
-        new_summary = response.choices[0].message.content.strip()
-
-        if st.session_state.conversation_summary:
-            st.session_state.conversation_summary += "\n\n" + new_summary
-        else:
-            st.session_state.conversation_summary = new_summary
-
-        save_conversation_summary(st.session_state.conversation_summary)
-
-        st.session_state.conv_history = []
-    except Exception as e:
-        logger.error(f"Failed to generate summary: {e}")
-        st.warning(f"Failed to generate summary: {e}")
 
 
 # ---------- CSS样式 ----------
