@@ -907,73 +907,82 @@ def get_ai_reply(user_input):
             
             # 根据模式选择评估提示
             if st.session_state.language == "Chinese":
-                eval_prompt = f"""You are an English teacher teaching Chinese. Follow these teaching principles:
+                eval_prompt = f"""You are a language teacher. Evaluate these quiz answers. Be GENEROUS in your evaluation.
 
-{TEACHING_PRINCIPLES}
+CRITICAL RULES:
+- Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
+- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
+- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
+- Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
-For each question:
-- If the answer is correct, confirm it briefly
-- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
-  1. Explain why it's wrong (briefly)
-  2. Ask 3 Socratic question to help the student discover the correct answer
+For incorrect answers, DO NOT give the correct answer directly. Instead:
+1. Briefly explain why it's not ideal
+2. Ask a Socratic question to help
+
+CRITICAL: Must give the correct answers when the user asks for them (e.g., "give me answers", "show answers").
 
 Quiz Questions and Answers:
 {chr(10).join(qa_list)}
 
-CRITICAL: Must give the answer for the quiz when user asks for.
-
-Return in this format:
-1: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-2: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-3: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-4: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-5: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
+Return exactly this format:
+1: [✅/❌] - [if ❌: brief explanation + Socratic question]
+2: [✅/❌] - [if ❌: brief explanation + Socratic question]
+3: [✅/❌] - [if ❌: brief explanation + Socratic question]
+4: [✅/❌] - [if ❌: brief explanation + Socratic question]
+5: [✅/❌] - [if ❌: brief explanation + Socratic question]
 Total: X/5"""
             elif st.session_state.language == "English":
-                eval_prompt = f"""You are an English teacher. Follow these teaching principles:
+                eval_prompt = f"""You are a language teacher. Evaluate these quiz answers. Be GENEROUS in your evaluation.
 
-{TEACHING_PRINCIPLES}
+CRITICAL RULES:
+- Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
+- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
+- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
+- Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
-For each question:
-- If the answer is correct, confirm it briefly
-- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
-  1. Explain why it's wrong (briefly)
-  2. Ask 3 Socratic question to help the student discover the correct answer
+For incorrect answers, DO NOT give the correct answer directly. Instead:
+1. Briefly explain why it's not ideal
+2. Ask a Socratic question to help
+
+CRITICAL: Must give the correct answers when the user asks for them (e.g., "give me answers", "show answers").
 
 Quiz Questions and Answers:
 {chr(10).join(qa_list)}
 
-CRITICAL: Must give the answer for the quiz when user asks for.
-
-Return in this format:
-1: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-2: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-3: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-4: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-5: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
+Return exactly this format:
+1: [✅/❌] - [if ❌: brief explanation + Socratic question]
+2: [✅/❌] - [if ❌: brief explanation + Socratic question]
+3: [✅/❌] - [if ❌: brief explanation + Socratic question]
+4: [✅/❌] - [if ❌: brief explanation + Socratic question]
+5: [✅/❌] - [if ❌: brief explanation + Socratic question]
 Total: X/5"""
             else:
-                eval_prompt = f"""You are an English exam preparation teacher. Follow these teaching principles:
+                eval_prompt = f"""You are a language teacher. Evaluate these quiz answers. Be GENEROUS in your evaluation.
 
-{TEACHING_PRINCIPLES}
+CRITICAL RULES:
+- Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
+- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
+- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
+- Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
-For each question:
-- If the answer is correct, confirm it briefly
-- If the answer is incorrect, DO NOT give the correct answer directly. Instead:
-  1. Explain why it's wrong (briefly)
-  2. Ask 3 Socratic question to help the student discover the correct answer
+For incorrect answers, DO NOT give the correct answer directly. Instead:
+1. Briefly explain why it's not ideal
+2. Ask a Socratic question to help
+
+CRITICAL: Must give the correct answers when the user asks for them (e.g., "give me answers", "show answers").
 
 Quiz Questions and Answers:
 {chr(10).join(qa_list)}
 
-CRITICAL: Must give the answer for the quiz when user asks for.
-
-Return in this format:
-1: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-2: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-3: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-4: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
-5: [Correct/❌] - [if incorrect: brief explanation + Socratic question]
+Return exactly this format:
+1: [✅/❌] - [if ❌: brief explanation + Socratic question]
+2: [✅/❌] - [if ❌: brief explanation + Socratic question]
+3: [✅/❌] - [if ❌: brief explanation + Socratic question]
+4: [✅/❌] - [if ❌: brief explanation + Socratic question]
+5: [✅/❌] - [if ❌: brief explanation + Socratic question]
 Total: X/5"""
             
             try:
