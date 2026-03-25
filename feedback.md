@@ -197,3 +197,31 @@
 **Score:** 0/5
 
 ---
+
+## Quiz Record - 2026-03-25 05:50:26
+
+**Topic:** Law / Politics / Governance / Religion
+**Questions:**
+1. 1. Which of the following best describes the term **subjection** in a legal context?
+2. 2. The defendant was placed under **____** before the hearing.
+3. 3. Translate into Chinese: *The tribunal convened to address the case of political dissent.*
+4. 4. Find and correct the mistake: *The tribunal's decision was final and cannot appeal.*
+5. 5. Arrange the following words into a meaningful sentence: **subjection, tribunal, law**
+
+**User Answers:**
+1. B
+2. subjection
+3. 法庭召开会议以处理政治异议案件。
+4. The tribunal’s decision was final and could not be appealed.
+5. The tribunal enforces the law to prevent subjection.
+
+**Feedback:**
+- Q1: ❌ Incorrect
+- Q2: ❌ Incorrect
+- Q3: ❌ Incorrect
+- Q4: ❌ Incorrect
+- Q5: ❌ Incorrect
+
+**Score:** 0/5
+
+---
