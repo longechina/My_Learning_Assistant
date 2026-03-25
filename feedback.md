@@ -1,5 +1,5 @@
 
-## Quiz Record - 2026-03-25 08:03:16
+## Quiz Record - 2026-03-25 08:10:59
 
 **Topic:** Law / Politics / Governance / Religion
 **Mode:** NEMT & CET
@@ -7,46 +7,33 @@
 ### Quiz:
 ## Quiz: Law / Politics / Governance / Religion
 
-1. Which of the following best describes the legal concept of "subjection"?  
-A. A voluntary agreement between parties  
-B. The act of being subjected to a law or authority  
-C. A type of tribunal used in civil cases  
-D. A religious rite of passage  
+1. What is the primary function of a tribunal in a legal system?
+A) To make laws
+B) To enforce laws
+C) To interpret laws and make judgments
+D) To advise the government
 
-2. The defendant was placed under _______ before the trial began.  
-____  
+2. The concept of subjection refers to the state of being under the control or ______ of a higher authority.
 
-3. Translate into Chinese:  
-"The tribunal convened to review the allegations of corruption."  
+3. Translate into Chinese: The new law will be reviewed by a special tribunal to ensure it does not infringe on individual rights.
 
-4. Find and correct the mistake in the following sentence:  
-"The tribunal was subjection to the new regulations."  
+4. The judge ruled that the subjection of the people to the monarch was absolute, but the sentance should be rephrased because it contians a error: The people was subected to the monarch.
 
-5. Arrange the following words to form a meaningful sentence:  
-"The", "tribunal", "was", "in", "subjection"
+5. Use the given words to make a sentence: tribunal, subjection, law, people, under
 
 ### User Answers:
-1. B, 2: subjection, 3: “法庭召集以审查腐败指控。”, 4: The tribunal was in subjection to the new regulations., 5: The tribunal was in subjection
-2. subjection,
-3. “法庭召集以审查腐败指控。
-4. The tribunal was in subjection to the new regulations.
-5. The tribunal was in subjection
+1. C
+2. authority
+3. “新法律将由一个特别法庭审查，以确保不侵犯个人权利。”
+4. The people were subject to the monarch.
+5. The people are under the subjection of the law tribunal
 
 ### Evaluation:
-1: ❌ - The answer lists several items instead of selecting a single choice, and it does not provide a clear definition of “subjection.”  
-   *Socratic question:* What do you think is the most accurate definition of “subjection” in a legal context?
-
-2: ❌ - “Subjection” is not the usual term for a defendant being held before trial.  
-   *Socratic question:* Which legal term is commonly used to describe a defendant being held or detained before trial?
-
-3: ✅
-
-4: ❌ - The answer repeats the original sentence without correcting the error; the phrase should be “subject to” instead of “in subjection to.”  
-   *Socratic question:* How could you rewrite the sentence to use a more natural expression of being bound by regulations?
-
-5: ❌ - The sentence is incomplete and does not use all the given words in a meaningful way.  
-   *Socratic question:* How could you rearrange the words to form a complete, grammatically correct sentence?
-
-Total: 1/5
+1: ✅ 
+2: ✅ 
+3: ✅ 
+4: ✅ 
+5: ✅ 
+Total: 5/5
 
 ---
