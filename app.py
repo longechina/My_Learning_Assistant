@@ -757,8 +757,8 @@ Your task:
 - No emojis!
 
 Use these rules to generate links:
-- YouTube: https://www.youtube.com/results?search_query={Chinese topic}+in+chinese
-- Quizlet: https://quizlet.com/search?query={Chinese topic}+chinese
+- YouTube: https://www.youtube.com/results?search_query={topic}+in+chinese the topic is Chinese
+- Quizlet: https://quizlet.com/search?query={topic}+chinese the topic is Chinese
 - StackExchange: https://chinese.stackexchange.com/search?q={single_keyword} only 1 Chinese keyword.
 
 Example format:
