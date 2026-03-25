@@ -8,6 +8,7 @@ import logging
 import datetime
 import streamlit as st
 import groq
+import requests
 
 # ---------- 配置日志记录 ----------
 if not os.path.exists("logs"):
@@ -22,6 +23,77 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# ---------- GitHub 配置 ----------
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
+REPO_OWNER = st.secrets.get("GITHUB_REPO_OWNER")
+REPO_NAME = st.secrets.get("GITHUB_REPO_NAME")
+GITHUB_ENABLED = GITHUB_TOKEN and REPO_OWNER and REPO_NAME
+
+
+# ---------- GitHub 上传函数 ----------
+def upload_file_to_github(file_path, content, commit_message):
+    """上传文件到 GitHub"""
+    if not GITHUB_ENABLED:
+        logger.warning("GitHub not configured, skipping upload")
+        return False
+    
+    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{file_path}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    try:
+        # 获取现有文件
+        response = requests.get(api_url, headers=headers)
+        
+        if response.status_code == 200:
+            file_data = response.json()
+            existing_content = base64.b64decode(file_data["content"]).decode("utf-8")
+            if existing_content == content:
+                logger.info(f"File {file_path} unchanged, skipping upload")
+                return True
+            sha = file_data["sha"]
+        else:
+            sha = None
+        
+        # 上传文件
+        data = {
+            "message": commit_message,
+            "content": base64.b64encode(content.encode("utf-8")).decode("utf-8"),
+            "sha": sha
+        }
+        
+        response = requests.put(api_url, headers=headers, json=data)
+        
+        if response.status_code in [200, 201]:
+            logger.info(f"Successfully uploaded {file_path} to GitHub")
+            return True
+        else:
+            logger.error(f"GitHub upload failed: {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"GitHub upload error: {e}")
+        return False
+
+
+def save_to_github(file_path, content, commit_message):
+    """保存文件到 GitHub（如果配置了）或本地"""
+    if GITHUB_ENABLED:
+        return upload_file_to_github(file_path, content, commit_message)
+    else:
+        # 本地保存
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Saved to local {file_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save locally: {e}")
+            return False
+
 
 # ---------- 加载 Teaching Principles ----------
 def load_teaching_principles():
@@ -42,13 +114,13 @@ TEACHING_PRINCIPLES = load_teaching_principles()
 if "quiz_active" not in st.session_state:
     st.session_state.quiz_active = False
 if "current_quiz" not in st.session_state:
-    st.session_state.current_quiz = None  # {"questions": [], "topic": "", "guidance": ""}
+    st.session_state.current_quiz = None
 if "quiz_answers" not in st.session_state:
     st.session_state.quiz_answers = {}
 if "quiz_asked" not in st.session_state:
     st.session_state.quiz_asked = False
 
-# ---------- 保存 Quiz 到 feedback.md ----------
+# ---------- 保存 Quiz 到 feedback.md（GitHub 自动上传）----------
 def save_quiz_to_feedback(topic, questions, user_answers, feedback, score, total):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"""
@@ -62,18 +134,59 @@ def save_quiz_to_feedback(topic, questions, user_answers, feedback, score, total
 {chr(10).join([f"{i+1}. {user_answers.get(i+1, 'No answer')}" for i in range(len(questions))])}
 
 **Feedback:**
-{chr(10).join([f"- Q{i+1}: {'Correct' if feedback[i] else 'Incorrect'}" for i in range(len(questions))])}
+{chr(10).join([f"- Q{i+1}: {'✅ Correct' if feedback[i] else '❌ Incorrect'}" for i in range(len(questions))])}
 
 **Score:** {score}/{total}
 
 ---
 """
+    # 获取现有内容
+    existing_content = ""
     try:
-        with open("feedback.md", "a", encoding="utf-8") as f:
-            f.write(entry)
-        logger.info(f"Quiz saved to feedback.md - Topic: {topic}, Score: {score}/{total}")
+        with open("feedback.md", "r", encoding="utf-8") as f:
+            existing_content = f.read()
+    except FileNotFoundError:
+        pass
+    
+    new_content = existing_content + entry if existing_content else "# Quiz Records\n\n" + entry
+    
+    # 保存到 GitHub（自动）
+    save_to_github("feedback.md", new_content, f"Add quiz record - {timestamp}")
+    
+    # 同时保存本地副本
+    try:
+        with open("feedback.md", "w", encoding="utf-8") as f:
+            f.write(new_content)
     except Exception as e:
-        logger.error(f"Failed to save quiz: {e}")
+        logger.error(f"Failed to save local feedback: {e}")
+
+
+# ---------- 保存对话总结到 GitHub ----------
+def save_conversation_summary(summary):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"""
+## Conversation Summary - {timestamp}
+{summary}
+
+---
+"""
+    existing_content = ""
+    try:
+        with open("conversation_summary.txt", "r", encoding="utf-8") as f:
+            existing_content = f.read()
+    except FileNotFoundError:
+        pass
+    
+    new_content = existing_content + entry if existing_content else "# Conversation Summaries\n\n" + entry
+    
+    save_to_github("conversation_summary.txt", new_content, f"Add conversation summary - {timestamp}")
+    
+    try:
+        with open("conversation_summary.txt", "w", encoding="utf-8") as f:
+            f.write(new_content)
+    except Exception as e:
+        logger.error(f"Failed to save local summary: {e}")
+
 
 # ---------- 生成 Quiz ----------
 def generate_quiz(topic, guidance, full_page_content):
@@ -103,10 +216,11 @@ Generate quiz questions:"""
         )
         questions_text = response.choices[0].message.content.strip()
         questions = [q.strip() for q in questions_text.split('\n') if q.strip() and q[0].isdigit()]
-        return questions
+        return questions if questions else ["What did you learn from this topic?", "Can you explain the main concept?"]
     except Exception as e:
         logger.error(f"Quiz generation error: {e}")
         return ["What did you learn from this topic?", "Can you explain the main concept?"]
+
 
 # ---------- 评估 Quiz 答案 ----------
 def evaluate_quiz(questions, user_answers):
@@ -133,6 +247,7 @@ Only return the evaluation, no extra text."""
     except Exception as e:
         logger.error(f"Quiz evaluation error: {e}")
         return "Unable to evaluate. Please try again."
+
 
 # ---------- 将背景图片转换为 Base64 嵌入 CSS ----------
 def get_base64_of_image(image_path):
@@ -303,7 +418,7 @@ if "conv_history" not in st.session_state:
 if "user_msg_count" not in st.session_state:
     st.session_state.user_msg_count = 0
 
-# ========== 自动参考相关状态 - 独立于用户输入 ==========
+# ========== 自动参考相关状态 ==========
 if "page_recommendations" not in st.session_state:
     st.session_state.page_recommendations = {}
 if "current_page_key" not in st.session_state:
@@ -319,12 +434,14 @@ if "search_keyword" not in st.session_state:
 if "search_results" not in st.session_state:
     st.session_state.search_results = []
 
+
 # ---------- 获取当前页面唯一标识 ----------
 def get_current_page_key():
     if st.session_state.current_mode == "textbook":
         return f"textbook_{st.session_state.level}_{'_'.join(st.session_state.path)}"
     else:
         return f"nemt_cet_{st.session_state.selected_nemt_cet}_{'_'.join(st.session_state.nemt_cet_path)}"
+
 
 # ---------- 获取当前页面全部内容 ----------
 def get_current_page_full_content():
@@ -406,6 +523,7 @@ def get_current_page_full_content():
             parts.append("Vocabulary:\n" + "\n".join(f"  - {v}" for v in node["vocabulary"]))
         return "\n".join(parts)
 
+
 # ========== 全局搜索函数 ==========
 def search_in_node(node, path_list, level_num, keyword):
     matches = []
@@ -434,6 +552,7 @@ def search_in_node(node, path_list, level_num, keyword):
     
     return matches
 
+
 def global_search(keyword):
     if not keyword.strip():
         return []
@@ -446,6 +565,7 @@ def global_search(keyword):
                 if isinstance(root_value, dict):
                     results.extend(search_in_node(root_value, [root_key], level_num, keyword))
     return results
+
 
 # ========== 自动生成参考消息 ==========
 def auto_generate_reference(level, full_page_content, path_string, mode="textbook"):
@@ -564,6 +684,7 @@ Now generate for: {topic}
             return None
     return None
 
+
 # ========== 获取或生成当前页面的推荐资源 ==========
 def get_page_recommendations():
     page_key = get_current_page_key()
@@ -608,6 +729,7 @@ def get_page_recommendations():
     
     return st.session_state.page_recommendations.get(page_key)
 
+
 # ========== 使用语言模型翻译单词 ==========
 def translate_word(word, target_lang="Chinese"):
     try:
@@ -642,86 +764,99 @@ Translation:"""
         logger.error(f"Translation error for '{word}': {e}")
         return word
 
-# ========== AI 回复函数（带 Quiz 系统）==========
+
+# ========== AI 回复函数（修复 UnboundLocalError）==========
 def get_ai_reply(user_input):
     logger.info(f"User input: {user_input[:100]}...")
     
     # 如果 Quiz 处于活跃状态，处理 Quiz 答案
     if st.session_state.quiz_active and st.session_state.current_quiz:
-        # 检查用户是否在回答 quiz
-        # 简单判断：如果用户输入看起来像答案（不是请求帮助等）
-        if user_input.lower().strip() in ["give me answers", "show answers", "give answers"]:
-            # 用户明确要求答案
+        # 获取当前 quiz 的问题列表 - 修复 UnboundLocalError
+        questions = st.session_state.current_quiz.get("questions", [])
+        
+        # 检查用户是否在请求答案
+        if user_input.lower().strip() in ["give me answers", "show answers", "give answers", "show me the answers"]:
+            reply = "I'd be happy to help! Let's go through the answers together. Which question would you like me to explain first?"
             st.session_state.quiz_active = False
-            # 继续正常回复
-        else:
-            # 收集答案
-            st.session_state.quiz_answers[len(st.session_state.quiz_answers) + 1] = user_input
+            st.session_state.current_quiz = None
+            st.session_state.quiz_answers = {}
+            st.session_state.quiz_asked = False
             
-            # 检查是否已经回答了所有问题
-            if len(st.session_state.quiz_answers) >= len(st.session_state.current_quiz["questions"]):
-                # 评估答案
-                questions = st.session_state.current_quiz["questions"]
-                user_answers = st.session_state.quiz_answers
-                
-                evaluation = evaluate_quiz(questions, user_answers)
-                
-                # 解析分数
-                score_match = re.search(r'Score:\s*(\d+)/(\d+)', evaluation)
-                score = int(score_match.group(1)) if score_match else 0
-                total = int(score_match.group(2)) if score_match else len(questions)
-                
-                # 生成反馈列表
-                feedback_list = []
-                for i, q in enumerate(questions):
-                    is_correct = f"Q{i+1}" in evaluation and "Correct" in evaluation.split(f"Q{i+1}:")[1] if f"Q{i+1}" in evaluation else False
-                    feedback_list.append(is_correct)
-                
-                # 保存到 feedback.md
-                save_quiz_to_feedback(
-                    st.session_state.current_quiz["topic"],
-                    questions,
-                    user_answers,
-                    feedback_list,
-                    score,
-                    total
-                )
-                
-                # 构建回复
-                reply = f"{evaluation}\n\nGreat job! Let me know if you have any questions about the feedback."
-                
-                # 重置 quiz 状态
-                st.session_state.quiz_active = False
-                st.session_state.current_quiz = None
-                st.session_state.quiz_answers = {}
-                st.session_state.quiz_asked = False
-                
-                # 添加到消息历史
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.session_state.conv_history.append({"role": "assistant", "content": reply})
-                
-                # TTS
-                try:
-                    audio_bytes, fmt = text_to_speech(reply)
-                    if audio_bytes:
-                        st.session_state.pending_tts = (audio_bytes, fmt)
-                except Exception as e:
-                    logger.error(f"TTS error: {e}")
-                return
-            else:
-                # 还有更多问题
-                remaining = len(questions) - len(user_answers)
-                reply = f"Please answer question {len(user_answers) + 1}: {questions[len(user_answers)]}"
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.session_state.conv_history.append({"role": "assistant", "content": reply})
-                
-                try:
-                    audio_bytes, fmt = text_to_speech(reply)
-                    if audio_bytes:
-                        st.session_state.pending_tts = (audio_bytes, fmt)
-                except Exception as e:
-                    logger.error(f"TTS error: {e}")
-                return
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.session_state.conv_history.append({"role": "assistant", "content": reply})
+            
+            try:
+                audio_bytes, fmt = text_to_speech(reply)
+                if audio_bytes:
+                    st.session_state.pending_tts = (audio_bytes, fmt)
+            except Exception as e:
+                logger.error(f"TTS error: {e}")
+            return
+        
+        # 收集答案
+        st.session_state.quiz_answers[len(st.session_state.quiz_answers) + 1] = user_input
+        
+        # 检查是否已经回答了所有问题
+        if len(st.session_state.quiz_answers) >= len(questions):
+            # 评估答案
+            user_answers = st.session_state.quiz_answers
+            evaluation = evaluate_quiz(questions, user_answers)
+            
+            # 解析分数
+            score_match = re.search(r'Score:\s*(\d+)/(\d+)', evaluation)
+            score = int(score_match.group(1)) if score_match else 0
+            total = int(score_match.group(2)) if score_match else len(questions)
+            
+            # 生成反馈列表
+            feedback_list = []
+            for i in range(len(questions)):
+                is_correct = False
+                if f"Q{i+1}" in evaluation:
+                    part = evaluation.split(f"Q{i+1}:")[1].split("\n")[0] if f"Q{i+1}" in evaluation else ""
+                    is_correct = "Correct" in part or "correct" in part.lower()
+                feedback_list.append(is_correct)
+            
+            # 保存到 feedback.md
+            save_quiz_to_feedback(
+                st.session_state.current_quiz.get("topic", "General"),
+                questions,
+                user_answers,
+                feedback_list,
+                score,
+                total
+            )
+            
+            reply = f"{evaluation}\n\nGreat job! Let me know if you have any questions about the feedback."
+            
+            # 重置 quiz 状态
+            st.session_state.quiz_active = False
+            st.session_state.current_quiz = None
+            st.session_state.quiz_answers = {}
+            st.session_state.quiz_asked = False
+            
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.session_state.conv_history.append({"role": "assistant", "content": reply})
+            
+            try:
+                audio_bytes, fmt = text_to_speech(reply)
+                if audio_bytes:
+                    st.session_state.pending_tts = (audio_bytes, fmt)
+            except Exception as e:
+                logger.error(f"TTS error: {e}")
+            return
+        else:
+            # 还有更多问题
+            reply = f"Please answer question {len(st.session_state.quiz_answers) + 1}: {questions[len(st.session_state.quiz_answers)]}"
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.session_state.conv_history.append({"role": "assistant", "content": reply})
+            
+            try:
+                audio_bytes, fmt = text_to_speech(reply)
+                if audio_bytes:
+                    st.session_state.pending_tts = (audio_bytes, fmt)
+            except Exception as e:
+                logger.error(f"TTS error: {e}")
+            return
     
     # 正常处理用户输入（非 Quiz 状态）
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -795,6 +930,7 @@ def get_ai_reply(user_input):
     if st.session_state.user_msg_count % 5 == 0 and st.session_state.user_msg_count > 0:
         generate_and_save_summary()
 
+
 # ========== 生成并保存对话总结 ==========
 def generate_and_save_summary():
     if not st.session_state.conv_history:
@@ -823,14 +959,14 @@ Summary:"""
         else:
             st.session_state.conversation_summary = new_summary
 
-        with open("conversation_summary.txt", "w", encoding="utf-8") as f:
-            f.write(st.session_state.conversation_summary)
-        logger.info("Conversation summary saved")
+        # 保存到 GitHub（自动）
+        save_conversation_summary(st.session_state.conversation_summary)
 
         st.session_state.conv_history = []
     except Exception as e:
         logger.error(f"Failed to generate summary: {e}")
         st.warning(f"Failed to generate summary: {e}")
+
 
 # ---------- CSS样式 ----------
 st.markdown(f"""
@@ -1239,7 +1375,6 @@ with language_col2:
             st.session_state.nemt_cet_path = []
         
         st.session_state.messages = [{"role": "system", "content": system_prompt}]
-        # 重置 quiz 状态
         st.session_state.quiz_active = False
         st.session_state.current_quiz = None
         st.session_state.quiz_answers = {}
