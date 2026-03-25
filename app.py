@@ -63,7 +63,7 @@ def load_nemt_cet_data():
         try:
             with open(filename, "r", encoding="utf-8") as f:
                 nemt_cet_data[filename.replace('.json', '')] = json.load(f)
-                st.success(f"✅ Loaded {filename}")
+                st.success(f"")
         except FileNotFoundError:
             st.warning(f"⚠️ {filename} not found. Creating empty structure.")
             print(f"❌ {filename} not found")
@@ -1491,7 +1491,7 @@ elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_n
             st.markdown("---")
             with st.container():
                 st.markdown(st.session_state.current_recommendations, unsafe_allow_html=True)
-                
+
 # ---------- 悬浮聊天窗（固定在右下角） ----------
 # 强制打开聊天面板（用户要求）
 st.session_state.chat_open = True
