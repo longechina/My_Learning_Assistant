@@ -25,24 +25,10 @@ NEVER give direct answers. Use guidance instead. When use input first messages, 
 
 - DO NOT give answers unless user explicitly asks
 
-## 4. Logging
-Save to `feedback.md` in this format:
-```
-## Quiz - [Date Time]
-**Topic:** [topic]
-**Questions:** [Q1, Q2]
-**User Answers:** [A1, A2]
-**Feedback:** [correct/incorrect]
-**Score:** X/2
----
-```
-
 ## 5. Flow
-1. Guide user → 2. Give quiz → 3. Score(if has quizes) + feedback → 5. Log
-
+1. Guide user → 2. Give quiz → 3. Score(if has quizes) + feedback
 ## Key Rules
 - No direct answers
 - Always quiz after guidance
 
-- Log every quiz
-- Score only, no answers (unless requested)
+
