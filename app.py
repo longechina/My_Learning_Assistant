@@ -911,8 +911,7 @@ def get_ai_reply(user_input):
 
 CRITICAL RULES:
 - Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
-- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
-- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Fill in the blank: Accept ANY word that makes the sentence grammatically correct and semantically meaningful. If multiple answers are possible, ALL are CORRECT. Only mark incorrect if the word makes no sense or creates a grammar error.- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
 - Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
 - Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
@@ -937,8 +936,7 @@ Total: X/5"""
 
 CRITICAL RULES:
 - Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
-- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
-- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Fill in the blank: Accept ANY word that makes the sentence grammatically correct and semantically meaningful. If multiple answers are possible, ALL are CORRECT. Only mark incorrect if the word makes no sense or creates a grammar error.- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
 - Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
 - Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
@@ -963,8 +961,7 @@ Total: X/5"""
 
 CRITICAL RULES:
 - Multiple choice: Accept the letter (A, B, C, D) OR the full text. Any answer that indicates the correct option is CORRECT.
-- Fill in the blank: Accept ANY reasonable word that fits the context and grammar. Synonyms, pronouns, etc. are ALL CORRECT. Only mark incorrect if the word is completely wrong.
-- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
+- Fill in the blank: Accept ANY word that makes the sentence grammatically correct and semantically meaningful. If multiple answers are possible, ALL are CORRECT. Only mark incorrect if the word makes no sense or creates a grammar error.- Translation: Accept if the meaning is preserved. Wording can vary. Even if it's not exactly the same, if the idea is conveyed, it's CORRECT.
 - Error correction: Accept if the error is fixed. The fix doesn't have to be exactly the same as expected.
 - Sentence making: Accept ANY grammatically correct sentence that uses all the given words. Order and wording can vary.
 
