@@ -9,11 +9,9 @@ import streamlit as st
 import groq
 
 # ---------- 配置日志记录 ----------
-# 创建 logs 目录
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-# 配置日志格式
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -189,11 +187,12 @@ if "conv_history" not in st.session_state:
 if "user_msg_count" not in st.session_state:
     st.session_state.user_msg_count = 0
 
-# ========== 自动参考相关状态 ==========
-if "auto_ref_pushed" not in st.session_state:
-    st.session_state.auto_ref_pushed = False
-if "current_recommendations" not in st.session_state:
-    st.session_state.current_recommendations = None
+# ========== 自动参考相关状态 - 独立于用户输入 ==========
+# 为每个页面单独存储推荐资源，不受用户消息影响
+if "page_recommendations" not in st.session_state:
+    st.session_state.page_recommendations = {}  # 存储每个页面的推荐资源
+if "current_page_key" not in st.session_state:
+    st.session_state.current_page_key = None
 
 # ========== 卡片翻转状态 ==========
 if "flip_states" not in st.session_state:
@@ -204,6 +203,13 @@ if "search_keyword" not in st.session_state:
     st.session_state.search_keyword = ""
 if "search_results" not in st.session_state:
     st.session_state.search_results = []
+
+# ---------- 获取当前页面唯一标识 ----------
+def get_current_page_key():
+    if st.session_state.current_mode == "textbook":
+        return f"textbook_{st.session_state.level}_{'_'.join(st.session_state.path)}"
+    else:
+        return f"nemt_cet_{st.session_state.selected_nemt_cet}_{'_'.join(st.session_state.nemt_cet_path)}"
 
 # ---------- 获取当前页面全部内容 ----------
 def get_current_page_full_content():
@@ -321,69 +327,12 @@ def auto_generate_reference(level, full_page_content, path_string, mode="textboo
         if notes_match:
             notes = notes_match.group(1).strip()[:200]
 
-    if mode == "nemt_cet":
-        prompt = f"""You are an English learning assistant. The user is studying: "{topic}".
-
-Topic summary: {notes if notes else "English exam vocabulary and usage"}
-
-Your task:
-- Generate 3-4 high-quality learning resources using fixed trusted platforms
-- DO search the web
-- Use the topic keyword to build real, valid search links
-- Keep it concise
-- No emojis!
-
-Use these rules to generate links:
-- YouTube: https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+english+learning
-- Quizlet: https://quizlet.com/search?query={topic}+vocabulary
-- StackExchange: https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'}
-
-Example format:
-【Recommended Resources】
-
-- YouTube: Beginner explanation video  
-  [Watch](https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+english+learning)
-
-- Quizlet: Flashcards for practice  
-  [Practice](https://quizlet.com/search?query={topic}+vocabulary)
-
-- English StackExchange: Community Q&A discussion  
-  [Explore](https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'})
-
-Now generate for: {topic}
-"""
-    elif st.session_state.language == "Chinese":
-        prompt = f"""You are a Chinese learning assistant. The user is at Level {level} studying: "{topic}".
-
-Topic summary: {notes if notes else "Basic Chinese learning topic"}
-
-Your task:
-- Generate 3-4 high-quality learning resources using fixed trusted platforms
-- DO search the web
-- Use the topic keyword to build real, valid search links
-- Keep it concise
-- No emojis!
-
-Use these rules to generate links:
-- YouTube: https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+in+chinese
-- Quizlet: https://quizlet.com/search?query={topic}+chinese
-- StackExchange: https://chinese.stackexchange.com/search?q={topic.split()[-1] if topic else 'chinese'}
-
-Example format:
-【Recommended Resources】
-
-- YouTube: Beginner explanation video  
-  [Watch](https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+in+chinese)
-
-- Quizlet: Flashcards for practice  
-  [Practice](https://quizlet.com/search?query={topic}+chinese)
-
-- Chinese StackExchange: Community Q&A discussion  
-  [Explore](https://chinese.stackexchange.com/search?q={topic.split()[-1] if topic else 'chinese'})
-
-Now generate for: {topic}
-"""
-    else:
+    # 根据语言和模式生成不同的提示
+    if mode == "nemt_cet" or st.session_state.language == "English":
+        # 英文模式 - 使用英文关键词
+        single_keyword = topic.split()[-1] if topic else "english"
+        single_keyword = re.sub(r'[^\w\s]', '', single_keyword).strip().lower()
+        
         prompt = f"""You are an English learning assistant. The user is at Level {level} studying: "{topic}".
 
 Topic summary: {notes if notes else "Basic English learning topic"}
@@ -398,7 +347,7 @@ Your task:
 Use these rules to generate links:
 - YouTube: https://www.youtube.com/results?search_query={topic.replace(' ', '+')}+english+learning
 - Quizlet: https://quizlet.com/search?query={topic}+vocabulary
-- StackExchange: https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'}
+- StackExchange: https://english.stackexchange.com/search?q={single_keyword}
 
 Example format:
 【Recommended Resources】
@@ -410,7 +359,41 @@ Example format:
   [Practice](https://quizlet.com/search?query={topic}+vocabulary)
 
 - English StackExchange: Community Q&A discussion  
-  [Explore](https://english.stackexchange.com/search?q={topic.split()[-1] if topic else 'english'})
+  [Explore](https://english.stackexchange.com/search?q={single_keyword})
+
+Now generate for: {topic}
+"""
+    else:  # Chinese 模式
+        single_keyword = topic.split()[-1] if topic else "中文"
+        single_keyword = re.sub(r'[^\u4e00-\u9fff\w\s]', '', single_keyword).strip()
+        
+        prompt = f"""You are a Chinese learning assistant. The user is at Level {level} studying: "{topic}".
+
+Topic summary: {notes if notes else "Basic Chinese learning topic"}
+
+Your task:
+- Generate 3-4 high-quality learning resources using fixed trusted platforms
+- DO search the web
+- Use the topic keyword to build real, valid search links
+- Keep it concise
+- No emojis!
+
+Use these rules to generate links:
+- YouTube: https://www.youtube.com/results?search_query={topic}+in+chinese
+- Quizlet: https://quizlet.com/search?query={topic}+chinese
+- StackExchange: https://chinese.stackexchange.com/search?q={single_keyword}
+
+Example format:
+【Recommended Resources】
+
+- YouTube: Beginner explanation video  
+  [Watch](https://www.youtube.com/results?search_query={topic}+in+chinese)
+
+- Quizlet: Flashcards for practice  
+  [Practice](https://quizlet.com/search?query={topic}+chinese)
+
+- Chinese StackExchange: Community Q&A discussion  
+  [Explore](https://chinese.stackexchange.com/search?q={single_keyword})
 
 Now generate for: {topic}
 """
@@ -438,16 +421,34 @@ Now generate for: {topic}
             return None
     return None
 
-# ========== 自动推送参考消息 ==========
-def auto_push_reference(level, path_string, mode="textbook"):
-    if st.session_state.auto_ref_pushed:
-        return
-    full_page_content = get_current_page_full_content()
-    if full_page_content:
-        ref_msg = auto_generate_reference(level, full_page_content, path_string, mode)
-        if ref_msg:
-            st.session_state.current_recommendations = ref_msg
-        st.session_state.auto_ref_pushed = True
+# ========== 获取或生成当前页面的推荐资源（独立于用户输入）==========
+def get_page_recommendations():
+    page_key = get_current_page_key()
+    
+    # 如果页面已切换，清空旧的推荐资源状态
+    if st.session_state.current_page_key != page_key:
+        st.session_state.current_page_key = page_key
+        # 不清空缓存，但下次会重新生成
+    
+    # 如果当前页面还没有推荐资源，生成一个
+    if page_key not in st.session_state.page_recommendations:
+        full_page_content = get_current_page_full_content()
+        if full_page_content:
+            path_string = ""
+            if st.session_state.current_mode == "textbook":
+                path_string = " > ".join(st.session_state.path)
+                mode = "textbook"
+                level = st.session_state.level
+            else:
+                path_string = " > ".join([str(p) for p in st.session_state.nemt_cet_path])
+                mode = "nemt_cet"
+                level = None
+            
+            ref_msg = auto_generate_reference(level, full_page_content, path_string, mode)
+            if ref_msg:
+                st.session_state.page_recommendations[page_key] = ref_msg
+    
+    return st.session_state.page_recommendations.get(page_key)
 
 # ========== 使用语言模型翻译单词 ==========
 def translate_word(word, target_lang="Chinese"):
@@ -981,8 +982,7 @@ with language_col2:
             st.session_state.nemt_cet_path = []
         
         st.session_state.messages = [{"role": "system", "content": system_prompt}]
-        st.session_state.auto_ref_pushed = False
-        st.session_state.current_recommendations = None
+        # 切换语言时不清空推荐资源缓存
         st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1040,8 +1040,6 @@ if st.session_state.language == "NEMT & CET":
             st.session_state.nemt_cet_path = []
             st.session_state.level = None
             st.session_state.path = []
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
     with col2:
         if st.button("NEMT", use_container_width=True):
@@ -1050,8 +1048,6 @@ if st.session_state.language == "NEMT & CET":
             st.session_state.nemt_cet_path = []
             st.session_state.level = None
             st.session_state.path = []
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
     with col3:
         if st.button("CET-46", use_container_width=True):
@@ -1060,8 +1056,6 @@ if st.session_state.language == "NEMT & CET":
             st.session_state.nemt_cet_path = []
             st.session_state.level = None
             st.session_state.path = []
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
 else:
     col1, col2, col3 = st.columns(3)
@@ -1070,24 +1064,18 @@ else:
             st.session_state.current_mode = "textbook"
             st.session_state.level = 1
             st.session_state.path = ["LEVEL_I"]
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
     with col2:
         if st.button("Level 2", use_container_width=True):
             st.session_state.current_mode = "textbook"
             st.session_state.level = 2
             st.session_state.path = ["LEVEL_II"]
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
     with col3:
         if st.button("Level 3", use_container_width=True):
             st.session_state.current_mode = "textbook"
             st.session_state.level = 3
             st.session_state.path = ["LEVEL_III"]
-            st.session_state.auto_ref_pushed = False
-            st.session_state.current_recommendations = None
             st.rerun()
 
 # 如果当前在 textbook 模式
@@ -1108,8 +1096,6 @@ if st.session_state.current_mode == "textbook":
             st.markdown("<div class='back-button'>", unsafe_allow_html=True)
             if st.button("Back", key="back_button"):
                 st.session_state.path.pop()
-                st.session_state.auto_ref_pushed = False
-                st.session_state.current_recommendations = None
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1203,20 +1189,17 @@ if st.session_state.current_mode == "textbook":
                                 label = key
                             if st.button(label, key=f"dir_{key}", use_container_width=True):
                                 st.session_state.path.append(key)
-                                st.session_state.auto_ref_pushed = False
-                                st.session_state.current_recommendations = None
                                 st.session_state.flip_states = {}
                                 st.rerun()
 
         display_node(current_node)
-
-        if st.session_state.current_recommendations:
+        
+        # 显示推荐资源（独立于用户输入）
+        recommendations = get_page_recommendations()
+        if recommendations:
             st.markdown("---")
             with st.container():
-                st.markdown(st.session_state.current_recommendations, unsafe_allow_html=True)
-
-        if not st.session_state.auto_ref_pushed:
-            auto_push_reference(st.session_state.level, bread)
+                st.markdown(recommendations, unsafe_allow_html=True)
 
 # 如果当前在 NEMT & CET 模式
 elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_nemt_cet:
@@ -1365,22 +1348,12 @@ elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_n
                         st.session_state.nemt_cet_path.append(num_key)
                         st.rerun()
         
-        # 独立生成推荐资源，不受用户消息影响
-        if not st.session_state.current_recommendations:
-            # 获取 topic 和 notes
-            topic = bread_parts[-1] if bread_parts else content_node.get("name", "English vocabulary")
-            notes = content_node.get("notes", "")[:200] if content_node.get("notes") else ""
-            
-            full_page_content = get_current_page_full_content()
-            ref_msg = auto_generate_reference(None, full_page_content or "", topic, mode="nemt_cet")
-            if ref_msg:
-                st.session_state.current_recommendations = ref_msg
-        
-        # 显示推荐资源（始终在下方显示）
-        if st.session_state.current_recommendations:
+        # 显示推荐资源（独立于用户输入）
+        recommendations = get_page_recommendations()
+        if recommendations:
             st.markdown("---")
             with st.container():
-                st.markdown(st.session_state.current_recommendations, unsafe_allow_html=True)
+                st.markdown(recommendations, unsafe_allow_html=True)
 
 # ---------- 悬浮聊天窗 ----------
 st.session_state.chat_open = True
@@ -1433,7 +1406,6 @@ if st.session_state.chat_open:
             st.session_state.conversation_summary = ""
             st.session_state.conv_history = []
             st.session_state.user_msg_count = 0
-            st.session_state.auto_ref_pushed = False
             if os.path.exists("conversation_summary.txt"):
                 os.remove("conversation_summary.txt")
             st.rerun()
