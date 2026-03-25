@@ -259,7 +259,7 @@ Generate the quiz:"""
     
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=65000,
@@ -702,7 +702,7 @@ Now generate for: {topic}
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
                 max_tokens=65000,
@@ -784,7 +784,7 @@ Word: {clean_word}
 Translation:"""
         
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=65000,
@@ -817,7 +817,7 @@ Conversation:
 Summary:"""
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": summary_prompt}],
             temperature=0.5,
             max_tokens=65000,
@@ -984,7 +984,7 @@ Total: X/5"""
             
             try:
                 eval_response = client.chat.completions.create(
-                    model="openai/gpt-oss-20b",
+                    model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": eval_prompt}],
                     temperature=0.3,
                     max_tokens=65000,
@@ -1097,7 +1097,7 @@ Total: X/5"""
 
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             messages=context_msgs,
             temperature=0.7,
             max_tokens=65000,
