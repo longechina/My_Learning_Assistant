@@ -43,6 +43,6 @@ Save to `feedback.md` in this format:
 ## Key Rules
 - No direct answers
 - Always quiz after guidance
-- Block other input during quiz
+
 - Log every quiz
 - Score only, no answers (unless requested)
