@@ -1,4 +1,3 @@
-```text
 # Teaching Principles
 
 ## Core: Guide, Don't Answer
@@ -42,4 +41,3 @@ Save to `feedback.md` in this format:
 - Block other input during quiz
 - Log every quiz
 - Score only, no answers (unless requested)
-```
