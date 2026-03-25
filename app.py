@@ -988,21 +988,24 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
         
-        # ========== 解析一次性答案 ==========
+        # ========== 解析用户答案 ==========
         user_input_lower = user_input.lower().strip()
         
-        # 尝试匹配 "1. A, 2. B, 3. C" 格式
-        # 匹配数字后跟 . : 或空格，然后跟答案内容
-        answer_pattern = re.findall(r'(\d+)[\.\:\s]+([^,]+?)(?=\s*\d+[\.\:\s]|$)', user_input)
+        # 尝试匹配 "1. A, 2. B, 3. C" 或 "1. A" 或 "1. A, 2. B" 等格式
+        # 匹配数字后跟 . : 或空格，然后跟答案内容（直到下一个数字或结尾）
+        answer_pattern = re.findall(r'(\d+)[\.\:\-\s]+([^,]+?)(?=\s*\d+[\.\:\-\s]|$)', user_input)
         
-        if answer_pattern and len(answer_pattern) >= len(questions):
-            # 一次性回答，直接填充所有答案
-            for i, (num, ans) in enumerate(answer_pattern):
-                if i < len(questions):
-                    st.session_state.quiz_answers[int(num)] = ans.strip()
+        if answer_pattern:
+            # 有编号格式的回答（可能是部分或全部）
+            for num_str, ans in answer_pattern:
+                q_num = int(num_str)
+                if 1 <= q_num <= len(questions):
+                    st.session_state.quiz_answers[q_num] = ans.strip()
         else:
-            # 单题回答
-            st.session_state.quiz_answers[len(st.session_state.quiz_answers) + 1] = user_input
+            # 没有编号，当作顺序回答（回答当前需要回答的问题）
+            current_q_num = len(st.session_state.quiz_answers) + 1
+            if current_q_num <= len(questions):
+                st.session_state.quiz_answers[current_q_num] = user_input
         
         # 检查是否已经回答了所有问题
         if len(st.session_state.quiz_answers) >= len(questions):
@@ -1035,10 +1038,13 @@ def get_ai_reply(user_input):
                 logger.error(f"TTS error: {e}")
             return
         else:
-            # 还有更多问题
-            next_q_num = len(st.session_state.quiz_answers) + 1
+            # 找出下一个未回答的问题编号
+            answered = set(st.session_state.quiz_answers.keys())
+            next_q_num = 1
+            while next_q_num in answered:
+                next_q_num += 1
+            
             if next_q_num <= len(questions):
-                # 从问题列表中获取当前问题文本
                 current_q_text = questions[next_q_num - 1] if next_q_num - 1 < len(questions) else f"Question {next_q_num}"
                 reply = f"Please answer question {next_q_num}: {current_q_text}"
             else:
@@ -2027,7 +2033,7 @@ if st.session_state.chat_open:
                 st.session_state.quiz_answers = {}
                 st.session_state.quiz_asked = True
                 
-                reply = f"Here's a quiz on {topic}:\n\n{quiz_text}\n\nPlease answer the questions (you can answer all at once)."
+                reply = f"Here's a quiz on {topic}:\n\n{quiz_text}\n\nPlease answer the questions. Use one of these formats:\n- 1. A, 2. B, 3. C\n- 1: A, 2: B, 3: C\n- 1- A, 2- B, 3- C\n- 1 A, 2 B, 3 C\n(You can answer all at once or one by one.)"
                 
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.session_state.conv_history.append({"role": "assistant", "content": reply})
