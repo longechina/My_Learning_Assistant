@@ -1,70 +1,83 @@
-# Chinese Test
-
-## Section 1: 填空题（选择题）
-
-**Instruction (EN):**  
-Each sentence has one blank. Choose the ONE best answer from A, B, C, or D.
-
-1. 他随身带了一________橡皮泥。  
-A. 张  
-B. 只  
-C. 块  
-D. 棵  
-
-2. 他很用功，________每天都按时完成作业。  
-A. 所以  
-B. 但是  
-C. 如果  
-D. 因为  
+# 题型模板（中文学习 / 英文学习）
 
 ---
 
-## Section 2: 词语排序造句
+## 中文学习 (Learn Chinese)
 
-**Instruction (EN):**  
-Rearrange the given words to make a correct sentence.
+### 1. 单选题 (Multiple Choice)
+**Instruction (EN):** Choose the ONE best answer.
 
-公园 去年 朋友 暑假 玩  
-
----
-
-## Section 3: 阅读理解（选择题）
-
-**Instruction (EN):**  
-Read the passage and choose the ONE best answer for each question.
-
-小明是学生，他每天早上七点起床，八点去学校上课。他喜欢运动，每天下午都会去操场跑步。
-
-1. 小明什么时候去学校？  
-A. 早上七点  
-B. 早上八点  
-C. 下午  
-D. 晚上  
-
-2. 小明每天下午做什么？  
-A. 上课  
-B. 跑步  
-C. 看书  
-D. 睡觉  
+1. 他________每天都去学校。  
+A. 都  
+B. 很  
+C. 太  
+D. 也  
 
 ---
 
-## Section 4: 选词填空
+### 2. 填空题 (Fill in the blank)
+**Instruction (EN):** Fill in the blank with the correct word.
 
-**Instruction (EN):**  
-Choose the most appropriate word.
-
-1. 今天的天气很________，我们去公园玩吧。  
-A. 热  
-B. 冷  
-C. 好  
-D. 坏  
+1. 我今天________朋友见面。  
 
 ---
 
-## Section 5: 造句练习（给词）
+### 3. 翻译题 (Translation)
+**Instruction (EN):** Translate into English.
 
-**Instruction (EN):**  
-Use the following words to make a sentence.
+1. 她喜欢喝咖啡。  
 
-- 吃饭 / 我 / 和 / 家人  
+---
+
+### 4. 改错题 (Error correction)
+**Instruction (EN):** Find and correct the mistake.
+
+1. 我昨天去看电影了在商场。  
+
+---
+
+### 5. 造句题 (Sentence making)
+**Instruction (EN):** Use the given words to make a sentence.
+
+1. 明天 / 我 / 去 / 学校  
+
+---
+
+## 英文学习 (Learn English)
+
+### 1. 单选题 (Multiple Choice)
+**Instruction (EN):** Choose the ONE best answer.
+
+1. He ______ to school every day.  
+A. go  
+B. goes  
+C. going  
+D. gone  
+
+---
+
+### 2. 填空题 (Fill in the blank)
+**Instruction (EN):** Fill in the blank with the correct word.
+
+1. I ______ a book yesterday.  
+
+---
+
+### 3. 翻译题 (Translation)
+**Instruction (EN):** Translate into Chinese.
+
+1. She likes drinking coffee.  
+
+---
+
+### 4. 改错题 (Error correction)
+**Instruction (EN):** Find and correct the mistake.
+
+1. He go to school every day.  
+
+---
+
+### 5. 造句题 (Sentence making)
+**Instruction (EN):** Use the given words to make a sentence.
+
+1. tomorrow / I / will / go / school  
