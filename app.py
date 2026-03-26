@@ -1581,8 +1581,8 @@ st.markdown(f"""
 
     /* 折叠状态 - 只留一个小竖条 */
     section[data-testid="stSidebar"][aria-expanded="false"] {{
-        width: 100px !important;
-        min-width: 100px !important;
+        width: 48px !important;
+        min-width: 48px !important;
         overflow: visible !important;
     }}
 
@@ -1800,6 +1800,51 @@ with st.sidebar:
                     }
                 }
             }, 50);
+        </script>
+        """, unsafe_allow_html=True)
+
+# ========== 侧边栏 ==========
+with st.sidebar:
+    # ========== 聊天区域 ==========
+    # 聊天消息显示区域
+    chat_messages = st.container()
+    with chat_messages:
+        for msg in st.session_state.messages:
+            if msg["role"] == "system":
+                continue
+            if msg["role"] == "user":
+                st.write(f"**You:** {msg['content']}")
+            else:
+                st.write(f"**AI:** {msg['content']}")
+        # 添加自动滚动脚本（放在这里，for循环之后，with块结束之前）
+        st.markdown("""
+        <script>
+            setTimeout(function() {
+                var sidebar = document.querySelector('section[data-testid="stSidebar"]');
+                if (sidebar) {
+                    var scrollable = sidebar.querySelector('[data-testid="stVerticalBlock"]');
+                    if (scrollable) {
+                        scrollable.scrollTop = scrollable.scrollHeight;
+                    }
+                }
+            }, 50);
+        </script>
+        """, unsafe_allow_html=True)
+        # 确保折叠按钮始终可点击
+        st.markdown("""
+        <script>
+            // 确保折叠按钮在折叠后仍然可点击
+            setTimeout(function() {
+                var sidebar = document.querySelector('section[data-testid="stSidebar"]');
+                if (sidebar) {
+                    var btn = sidebar.querySelector('button[data-testid="stSidebarCollapseButton"]');
+                    if (btn) {
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.zIndex = '9999';
+                        console.log('折叠按钮已激活');
+                    }
+                }
+            }, 100);
         </script>
         """, unsafe_allow_html=True)
 
