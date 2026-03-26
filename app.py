@@ -1568,7 +1568,8 @@ st.markdown(f"""
         background-color: transparent !important;
         border-right: none !important;
         backdrop-filter: none !important;
-        transition: width 0.3s ease !important;
+        width: 400px !important;
+        min-width: 400px !important;
         z-index: 100 !important;
     }}
 
