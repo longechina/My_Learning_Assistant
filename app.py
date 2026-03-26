@@ -1632,7 +1632,7 @@ st.markdown(f"""
         background-color: rgba(0, 0, 0, 0.1) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
-        color: #b0b0b0 !important;
+        color: #b0b0b0  !important;
     }}
 
     /* 侧边栏按钮 - 黑色半透明 */
@@ -1640,54 +1640,20 @@ st.markdown(f"""
         background-color: rgba(0, 0, 0, 0.15) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
-        color: #b0b0b0 !important;
+        color: #b0b0b0  !important;
     }}
 
     /* 下拉框选项文字颜色 */
     section[data-testid="stSidebar"] select option {{
         background-color: #1a1a2e !important;
-        color: #b0b0b0 !important;
-    }}
-
-    /* 语音按钮 */
-    section[data-testid="stSidebar"] div[data-testid="stAudioInput"] button {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }}
-
-    /* 聊天输入框 */
-    section[data-testid="stSidebar"] div[data-testid="stChatInput"] textarea {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         color: #b0b0b0  !important;
     }}
 
-    /* Search 输入框 */
-    section[data-testid="stSidebar"] input[data-testid="stTextInput"] {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #b0b0b0 !important;
+    /* 输入框占位符文字颜色 - 更浅 */
+    section[data-testid="stSidebar"] input::placeholder,
+    section[data-testid="stSidebar"] textarea::placeholder {{
+        color: #b0b0b0  !important;
     }}
-
-    /* OCR 文件上传区域 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-    }}
-
-    /* 文件上传按钮 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] button {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }}
-
-    /* 文件上传区域文字 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] p,
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] span {{
-        color: #b0b0b0 !important;
-    }}
-
 
 
     /* 其他原有样式保持不变 */
