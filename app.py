@@ -1564,38 +1564,38 @@ st.markdown(f"""
         display: none !important;
     }}
 
-    /* ========== 侧边栏样式 - 支持折叠/展开 ========== */
-    section[data-testid="stSidebar"] {{
-        visibility: visible !important;
-        opacity: 1 !important;
-        width: 320px !important;
-        min-width: 320px !important;
-        max-width: 320px !important;
-        background-color: rgba(20, 20, 30, 0.95) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
-        z-index: 1000 !important;
-        backdrop-filter: blur(10px) !important;
-        position: relative !important;
-        overflow-y: auto !important;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
-        transition: width 0.2s ease !important;
-    }}
+    # /* ========== 侧边栏样式 - 支持折叠/展开 ========== */
+    # section[data-testid="stSidebar"] {{
+    #     visibility: visible !important;
+    #     opacity: 1 !important;
+    #     width: 320px !important;
+    #     min-width: 320px !important;
+    #     max-width: 320px !important;
+    #     background-color: rgba(20, 20, 30, 0.95) !important;
+    #     border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+    #     z-index: 1000 !important;
+    #     backdrop-filter: blur(10px) !important;
+    #     position: relative !important;
+    #     overflow-y: auto !important;
+    #     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+    #     transition: width 0.2s ease !important;
+    # }}
 
-    /* 折叠状态 */
-    section[data-testid="stSidebar"][aria-expanded="false"] {{
-        width: 0px !important;
-        min-width: 0px !important;
-        max-width: 0px !important;
-        overflow: hidden !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border-right: none !important;
-        box-shadow: none !important;
-    }}
+    # /* 折叠状态 */
+    # section[data-testid="stSidebar"][aria-expanded="false"] {{
+    #     width: 0px !important;
+    #     min-width: 0px !important;
+    #     max-width: 0px !important;
+    #     overflow: hidden !important;
+    #     padding: 0 !important;
+    #     margin: 0 !important;
+    #     border-right: none !important;
+    #     box-shadow: none !important;
+    # }}
 
-    section[data-testid="stSidebar"][aria-expanded="false"] > div {{
-        display: none !important;
-    }}
+    # section[data-testid="stSidebar"][aria-expanded="false"] > div {{
+    #     display: none !important;
+    # }}
 
     /* 确保侧边栏内容可见 */
     section[data-testid="stSidebar"] > div {{
