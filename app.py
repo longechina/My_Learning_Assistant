@@ -1776,7 +1776,7 @@ st.markdown(f"""
 with st.sidebar:
     # ========== 聊天区域 ==========
     # 聊天消息显示区域
-    chat_messages = st.container(height=750)
+    chat_messages = st.container()
     with chat_messages:
         for msg in st.session_state.messages:
             if msg["role"] == "system":
@@ -1785,7 +1785,21 @@ with st.sidebar:
                 st.write(f"**You:** {msg['content']}")
             else:
                 st.write(f"**AI:** {msg['content']}")
-    
+        # 添加自动滚动脚本（放在这里，for循环之后，with块结束之前）
+        st.markdown("""
+        <script>
+            setTimeout(function() {
+                var sidebar = document.querySelector('section[data-testid="stSidebar"]');
+                if (sidebar) {
+                    var scrollable = sidebar.querySelector('[data-testid="stVerticalBlock"]');
+                    if (scrollable) {
+                        scrollable.scrollTop = scrollable.scrollHeight;
+                    }
+                }
+            }, 50);
+        </script>
+        """, unsafe_allow_html=True)
+        
     # 第一行：语音 + 文本输入框
     col_voice, col_text = st.columns([1, 4])
     with col_voice:
