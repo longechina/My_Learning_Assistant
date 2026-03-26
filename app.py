@@ -1636,7 +1636,7 @@ st.markdown(f"""
 
     /* 侧边栏按钮 - 黑色半透明 */
     section[data-testid="stSidebar"] button {{
-        background-color: rgba(0, 0, 0, 0.1) !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
     }}
