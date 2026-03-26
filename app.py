@@ -1526,8 +1526,7 @@ def process_ocr_pdf(uploaded_pdf):
     else:
         return None
 
-
-# ---------- CSS样式 ----------
+# ---------- CSS样式（修改版）----------
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
@@ -1564,11 +1563,59 @@ st.markdown(f"""
         display: none !important;
     }}
 
-    /* ========== 侧边栏样式 - 极简版，只保留视觉样式 ========== */
+    /* ========== 侧边栏样式 ========== */
     section[data-testid="stSidebar"] {{
         background-color: rgba(20, 20, 30, 0.95) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
         backdrop-filter: blur(10px) !important;
+        transition: width 0.3s ease !important;
+        z-index: 100 !important;
+    }}
+
+    /* 展开状态 */
+    section[data-testid="stSidebar"][aria-expanded="true"] {{
+        width: 400px !important;
+        min-width: 400px !important;
+    }}
+
+    /* 折叠状态 - 只显示一个按钮区域 */
+    section[data-testid="stSidebar"][aria-expanded="false"] {{
+        width: 60px !important;
+        min-width: 60px !important;
+        overflow: visible !important;
+    }}
+
+    /* 折叠时隐藏内容，但保留按钮区域 */
+    section[data-testid="stSidebar"][aria-expanded="false"] > div:not([data-testid="stSidebarHeader"]) {{
+        display: none !important;
+    }}
+
+    /* 自定义折叠按钮样式 */
+    section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {{
+        background-color: rgba(102, 126, 234, 0.8) !important;
+        border-radius: 8px !important;
+        margin: 10px !important;
+        padding: 8px !important;
+        width: 40px !important;
+        height: 40px !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+        font-size: 20px !important;
+        z-index: 101 !important;
+    }}
+
+    section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"]:hover {{
+        background-color: rgba(102, 126, 234, 1) !important;
+        transform: scale(1.05) !important;
+    }}
+
+    /* 折叠状态下按钮旋转 */
+    section[data-testid="stSidebar"][aria-expanded="false"] button[data-testid="stSidebarCollapseButton"] {{
+        transform: rotate(180deg) !important;
+        position: relative !important;
+        left: 10px !important;
     }}
 
     /* 确保侧边栏中的文本可见 */
@@ -1576,120 +1623,97 @@ st.markdown(f"""
         color: #ffffff !important;
     }}
 
-    /* 侧边栏标题样式 */
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3,
-    section[data-testid="stSidebar"] .stMarkdown h1,
-    section[data-testid="stSidebar"] .stMarkdown h2,
-    section[data-testid="stSidebar"] .stMarkdown h3 {{
-        color: #ffffff !important;
-    }}
-
-    /* 侧边栏按钮样式 */
-    section[data-testid="stSidebar"] button {{
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        border-radius: 8px !important;
-        transition: all 0.2s ease !important;
-    }}
-
-    section[data-testid="stSidebar"] button:hover {{
-        background-color: rgba(255, 255, 255, 0.25) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
-    }}
-
-    /* 侧边栏输入框样式 */
-    section[data-testid="stSidebar"] input,
-    section[data-testid="stSidebar"] select,
-    section[data-testid="stSidebar"] textarea {{
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        border-radius: 8px !important;
-    }}
-
-    section[data-testid="stSidebar"] input:focus,
-    section[data-testid="stSidebar"] select:focus,
-    section[data-testid="stSidebar"] textarea:focus {{
-        border-color: rgba(102, 126, 234, 0.6) !important;
-        outline: none !important;
-    }}
-
-    /* 侧边栏分隔线样式 */
-    section[data-testid="stSidebar"] hr {{
-        margin: 15px 0 !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-    }}
-
-    /* 侧边栏选择框样式 */
-    section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {{
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    }}
-
-    /* 聊天输入框样式 */
-    div[data-testid="stChatInput"] textarea,
-    div[data-testid="stChatInput"] > div {{
-        background-color: transparent !important;
-        background: transparent !important;
-    }}
-
-    div[data-testid="stChatMessage"] {{
-        background-color: rgba(240, 240, 240, 0.4) !important;
-        backdrop-filter: blur(5px);
-    }}
-
-    .stChatInputContainer,
-    div[data-testid="stChatInputContainer"] {{
-        background-color: transparent !important;
-    }}
-
-    div[data-testid="stAppViewBlockContainer"] {{
-        background: transparent !important;
-    }}
-
-    /* 搜索容器样式 */
-    .search-container {{
+    /* 侧边栏内的聊天容器 */
+    .sidebar-chat-container {{
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        height: calc(100vh - 60px);
+        padding: 10px;
+    }}
+
+    /* 聊天消息区域 - 占80% */
+    .sidebar-chat-messages {{
+        flex: 8;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }}
+
+    /* 输入区域 - 占20% */
+    .sidebar-chat-input {{
+        flex: 2;
+        display: flex;
+        flex-direction: column;
         gap: 10px;
-        margin-bottom: 20px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
     }}
-    .search-scope-selector {{
-        width: 120px;
-        background: white;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
+
+    /* 侧边栏内的聊天消息样式 */
+    .sidebar-chat-message {{
+        margin-bottom: 12px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        word-wrap: break-word;
     }}
-    .search-input {{
+
+    .sidebar-chat-message-user {{
+        background-color: rgba(102, 126, 234, 0.3);
+        margin-left: 20px;
+    }}
+
+    .sidebar-chat-message-assistant {{
+        background-color: rgba(255, 255, 255, 0.1);
+        margin-right: 20px;
+    }}
+
+    /* 侧边栏内按钮行 */
+    .sidebar-button-row {{
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }}
+
+    .sidebar-button-row button {{
         flex: 1;
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 8px !important;
+        padding: 8px !important;
+        font-size: 14px !important;
     }}
 
-    /* 标题样式 */
-    h1 {{
-        text-align: left;
-        color: #ffffff !important;
+    /* 侧边栏内输入框 */
+    .sidebar-chat-input textarea {{
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 8px !important;
+        color: white !important;
+        resize: none !important;
+    }}
+
+    /* 隐藏原始的聊天区域 */
+    .main-chat-area {{
+        display: none !important;
+    }}
+
+    /* 其他原有样式保持不变 */
+    .breadcrumb {{
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
         font-family: 'Manrope', sans-serif;
-        font-size: 300px;
-        font-weight: 800;
-        word-break: break-word;
-        max-width: 100%;
-        margin-bottom: 40px;
-        letter-spacing: normal;
-        line-height: 1.1;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+        color: #ffffff !important;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }}
 
-    @media (max-width: 768px) {{
-        h1 {{
-            font-size: 96px;
-        }}
-    }}
-
-    /* 主按钮样式 - 首页的 Level 按钮 */
     button[kind="primary"],
     .stButton button {{
         background-color: rgba(255, 255, 255, 0.2) !important;
@@ -1699,8 +1723,6 @@ st.markdown(f"""
         font-weight: 800 !important;
         padding: 30px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-        letter-spacing: normal !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 12px !important;
     }}
@@ -1713,229 +1735,49 @@ st.markdown(f"""
     .stButton button:hover {{
         background-color: rgba(255, 255, 255, 0.3) !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
     }}
 
-    /* 面包屑导航样式 */
-    .breadcrumb {{
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        font-family: 'Manrope', sans-serif;
-        font-size: 18px;
+    h1 {{
         color: #ffffff !important;
-        font-weight: 700;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        letter-spacing: normal;
+        font-size: 300px;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }}
 
-    .back-button {{
-        margin-bottom: 20px;
+    @media (max-width: 768px) {{
+        h1 {{
+            font-size: 96px;
+        }}
     }}
-    
-    button[key="back_button"] {{
-        background-color: rgba(255, 255, 255, 0.2) !important;
+
+    h2, h3 {{
         color: #ffffff !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-size: 18px !important;
-        font-weight: 700 !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 12px !important;
-        padding: 10px 24px !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }}
 
-    /* 内容容器样式 - 首页单词卡片风格 */
+    p, div, span, label {{
+        color: #ffffff !important;
+    }}
+
     div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {{
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 15px;
         border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
     }}
 
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        background-color: rgba(255, 255, 255, 0.15);
-    }}
-
-    /* 标题样式 */
-    h2 {{
-        color: #ffffff !important;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 800;
-        margin-bottom: 15px;
-        font-size: 56px;
-        letter-spacing: normal;
-        line-height: 1.2;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    }}
-    
-    h3 {{
-        color: #ffffff !important;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 700;
-        margin-top: 20px;
-        margin-bottom: 10px;
-        font-size: 36px;
-        letter-spacing: normal;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    }}
-
-    /* 全局文本颜色 */
-    p, div, span, label {{
-        color: #ffffff !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-weight: 400 !important;
-        line-height: 1.6 !important;
-    }}
-
-    hr {{
-        margin: 30px 0;
-        border: none;
-        border-top: 2px solid rgba(255, 255, 255, 0.2);
-    }}
-
-    a {{
-        color: #90cdf4 !important;
-        text-decoration: none !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-weight: 600 !important;
-    }}
-    
-    a:hover {{
-        color: #b3e0ff !important;
-        text-decoration: underline !important;
-    }}
-
-    /* 聊天区域样式 */
-    .chat-messages-area {{
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }}
-    
-    .chat-message {{
-        margin-bottom: 15px;
-        padding: 12px;
-        background-color: rgba(240, 240, 240, 0.2);
-        border-radius: 12px;
-        font-family: 'Manrope', sans-serif;
-        font-size: 15px;
-        font-weight: 400;
-        line-height: 1.6;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }}
-    
-    .chat-message strong {{
-        color: #90cdf4 !important;
-        font-weight: 700;
-    }}
-
-    /* 聊天输入框 */
-    .stChatInput {{
-        border-radius: 15px !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        background-color: rgba(36, 37, 46, 0.9) !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-size: 16px !important;
-        font-weight: 400 !important;
-        color: #ffffff !important;
-    }}
-    
-    .stChatInput > div {{
-        background: transparent !important;
-    }}
-    
-    .stChatInput button {{
-        background: transparent !important;
-        border: none !important;
-    }}
-
-    .stChatInput textarea::placeholder {{
-        color: rgba(255, 255, 255, 0.6) !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-size: 16px !important;
-        font-weight: 400 !important;
-        background: transparent !important;
-        border: none !important;
-    }}
-
-    /* 清除聊天按钮 */
-    button[key="clear_chat"] {{
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 12px !important;
-        padding: 6px 8px !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        color: #ffffff !important;
-        box-shadow: none !important;
-    }}
-
-    button[key="clear_chat"]:hover {{
-        background-color: rgba(255, 255, 255, 0.3) !important;
-    }}
-
-    /* 音频相关样式 */
-    .stAudio {{
-        display: none !important;
-    }}
-
-    div[data-testid="stAudioInput"] {{
-        margin: 4px 0 !important;
-        background: transparent !important;
-    }}
-    
-    div[data-testid="stAudioInput"] > div {{
-        background: transparent !important;
-        border: none !important;
-    }}
-    
-    div[data-testid="stAudioInput"] button {{
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 12px !important;
-    }}
-
-    /* 隐藏其他不必要的元素 */
-    div[data-baseweb="tooltip"]:not(.language-selector *) {{
-        display: none !important;
-    }}
-    
-    div[data-baseweb="modal"]:not(.language-selector *) {{
-        display: none !important;
-    }}
-    
-    .element-container:has(iframe) {{
-        display: none !important;
-    }}
-
-    /* 垂直块样式 */
-    div[data-testid="stVerticalBlock"] > div:first-child {{
-        margin-top: 0px;
-    }}
-    
-    /* 单词卡片样式 - 首页样式 */
     .word-card {{
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 20px;
         margin: 10px 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
         border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
     }}
-    
+
     .word-card:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         background-color: rgba(255, 255, 255, 0.15);
     }}
 </style>
@@ -2563,47 +2405,152 @@ elif st.session_state.current_mode == "nemt_cet" and st.session_state.selected_n
             with st.container():
                 st.markdown(recommendations, unsafe_allow_html=True)
 
-# ---------- 悬浮聊天窗 ----------
-st.session_state.chat_open = True
+# ========== 侧边栏聊天区域（完全重构）==========
+# 注意：聊天功能现在完全放在侧边栏内
 
-if st.session_state.chat_open:
-    st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
+# 初始化聊天状态（如果还没有）
+if "sidebar_messages" not in st.session_state:
+    st.session_state.sidebar_messages = st.session_state.messages.copy()
 
-    st.markdown('''
-    <script>
-        if (!window.audioContextInitialized) {
-            window.audioContextInitialized = true;
-            var silentAudio = document.createElement('audio');
-            silentAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-            silentAudio.play().catch(function() {});
-        }
-    </script>
-    ''', unsafe_allow_html=True)
-
-    st.markdown('<div class="chat-messages-area" id="chat-messages">', unsafe_allow_html=True)
-    for msg in st.session_state.messages:
+# 侧边栏 - 现在包含所有聊天功能
+with st.sidebar:
+    st.markdown("### 💬 AI Tutor")
+    st.markdown("---")
+    
+    # 聊天消息区域 - 占80%高度
+    st.markdown('<div class="sidebar-chat-messages">', unsafe_allow_html=True)
+    
+    # 显示聊天记录
+    for msg in st.session_state.sidebar_messages:
+        if msg["role"] == "system":
+            continue
         if msg["role"] == "user":
-            st.markdown(f'<div class="chat-message"><strong>You:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
-        elif msg["role"] == "assistant":
-            st.markdown(f'<div class="chat-message"><strong>AI:</strong> {msg["content"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="sidebar-chat-message sidebar-chat-message-user"><strong>You:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="sidebar-chat-message sidebar-chat-message-assistant"><strong>AI:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 输入区域 - 占20%高度
+    st.markdown('<div class="sidebar-chat-input">', unsafe_allow_html=True)
+    
+    # 文本输入框
+    user_input = st.text_area("", placeholder="Type your message here...", key="sidebar_chat_input", height=80, label_visibility="collapsed")
+    
+    # 按钮行
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        send_btn = st.button("📤 Send", key="sidebar_send_btn", use_container_width=True)
+    with col2:
+        voice_btn = st.button("🎤 Voice", key="sidebar_voice_btn", use_container_width=True)
+    with col3:
+        clear_btn = st.button("🗑️ Clear", key="sidebar_clear_btn", use_container_width=True)
+    
+    # 语音输入（隐藏的audio input，通过按钮触发）
+    audio_input = st.audio_input("", key="sidebar_audio_input", label_visibility="collapsed")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 处理发送按钮
+    if send_btn and user_input:
+        with st.spinner("Thinking..."):
+            # 更新消息列表
+            st.session_state.sidebar_messages.append({"role": "user", "content": user_input})
+            
+            # 调用AI回复
+            full_page = get_current_page_full_content()
+            context_msgs = st.session_state.sidebar_messages.copy()
+            
+            if st.session_state.language:
+                context_msgs.insert(1, {"role": "system", "content": f"The user is currently learning {st.session_state.language}."})
+            if full_page:
+                context_msgs.insert(1, {"role": "system", "content": full_page})
+            
+            try:
+                response = client.chat.completions.create(
+                    model=st.session_state.model_name,
+                    messages=context_msgs,
+                    temperature=0.7,
+                    max_tokens=st.session_state.model_max_tokens,
+                )
+                reply = response.choices[0].message.content.strip()
+                st.session_state.sidebar_messages.append({"role": "assistant", "content": reply})
+                
+                # TTS
+                try:
+                    audio_bytes, fmt = text_to_speech(reply)
+                    if audio_bytes:
+                        st.session_state.pending_tts = (audio_bytes, fmt)
+                except Exception as e:
+                    logger.error(f"TTS error: {e}")
+                    
+            except Exception as e:
+                st.error(f"Error: {e}")
+            
+            st.rerun()
+    
+    # 处理语音输入
+    if audio_input is not None:
+        audio_id = f"{audio_input.name}_{audio_input.size}"
+        if audio_id != st.session_state.get("last_sidebar_audio_id", ""):
+            st.session_state.last_sidebar_audio_id = audio_id
+            audio_bytes = audio_input.read()
+            if audio_bytes:
+                with st.spinner("Transcribing..."):
+                    transcript = transcribe_audio(audio_bytes)
+                if transcript:
+                    # 自动填充到输入框并发送
+                    st.session_state.sidebar_chat_input = transcript
+                    # 模拟发送
+                    with st.spinner("Thinking..."):
+                        st.session_state.sidebar_messages.append({"role": "user", "content": transcript})
+                        
+                        full_page = get_current_page_full_content()
+                        context_msgs = st.session_state.sidebar_messages.copy()
+                        
+                        if st.session_state.language:
+                            context_msgs.insert(1, {"role": "system", "content": f"The user is currently learning {st.session_state.language}."})
+                        if full_page:
+                            context_msgs.insert(1, {"role": "system", "content": full_page})
+                        
+                        try:
+                            response = client.chat.completions.create(
+                                model=st.session_state.model_name,
+                                messages=context_msgs,
+                                temperature=0.7,
+                                max_tokens=st.session_state.model_max_tokens,
+                            )
+                            reply = response.choices[0].message.content.strip()
+                            st.session_state.sidebar_messages.append({"role": "assistant", "content": reply})
+                            
+                            try:
+                                audio_bytes, fmt = text_to_speech(reply)
+                                if audio_bytes:
+                                    st.session_state.pending_tts = (audio_bytes, fmt)
+                            except Exception as e:
+                                logger.error(f"TTS error: {e}")
+                                
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+                        
+                        st.rerun()
+    
+    # 处理清除按钮
+    if clear_btn:
+        st.session_state.sidebar_messages = [{"role": "system", "content": system_prompt}]
+        st.session_state.conversation_summary = ""
+        st.session_state.conv_history = []
+        st.session_state.user_msg_count = 0
+        st.rerun()
+    
+    # 同步消息到全局状态
+    st.session_state.messages = st.session_state.sidebar_messages
 
-    st.markdown('''
-    <script>
-        setTimeout(function() {
-            var chatArea = document.getElementById('chat-messages');
-            if (chatArea) {
-                chatArea.scrollTop = chatArea.scrollHeight;
-            }
-        }, 100);
-    </script>
-    ''', unsafe_allow_html=True)
-
-    if st.session_state.pending_tts:
-        audio_bytes, fmt = st.session_state.pending_tts
-        st.audio(audio_bytes, format=fmt, autoplay=True)
-        st.session_state.pending_tts = None
-
+# TTS音频播放
+if st.session_state.pending_tts:
+    audio_bytes, fmt = st.session_state.pending_tts
+    st.audio(audio_bytes, format=fmt, autoplay=True)
+    st.session_state.pending_tts = None
     # 输入区域：三列布局（Clear + 语音 + 文本输入）
     col_clear, col_voice, col_text = st.columns([1, 1, 4])
 
