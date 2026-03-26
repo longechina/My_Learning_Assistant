@@ -2183,7 +2183,7 @@ with st.sidebar:
     st.markdown("---")
     
     # OCR 区域
-    st.markdown("### 📷 OCR")
+    st.markdown("### OCR")
     
     # 图片上传
     uploaded_images = st.file_uploader(
