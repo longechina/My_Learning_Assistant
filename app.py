@@ -363,13 +363,13 @@ st.set_page_config(
     menu_items=None
 )
 
-# bg_base64 = get_base64_of_image("background.jpg")
-# _bg_warning = None  # 延迟显示，避免在 set_page_config 之前调用 st.*
-# if bg_base64 is None:
-#     _bg_warning = "Background image not found. Using solid light background."
-#     bg_css = "background-color: #f0f0f0;"
-# else:
-#     bg_css = f"background-image: url('data:image/jpeg;base64,{bg_base64}');"
+bg_base64 = get_base64_of_image("background.jpg")
+_bg_warning = None  # 延迟显示，避免在 set_page_config 之前调用 st.*
+if bg_base64 is None:
+    _bg_warning = "Background image not found. Using solid light background."
+    bg_css = "background-color: #f0f0f0;"
+else:
+    bg_css = f"background-image: url('data:image/jpeg;base64,{bg_base64}');"
 
 # ---------- 初始化语言状态 ----------
 if "language" not in st.session_state:
@@ -1777,8 +1777,8 @@ st.markdown(f"""
 
 
 # FIX 1: 延迟显示背景图片警告（set_page_config 之后才能调用 st.warning）
-# if _bg_warning:
-#     st.warning(_bg_warning)
+if _bg_warning:
+    st.warning(_bg_warning)
 
 # ================================================================
 # FIX 2: 侧边栏只保留一个 with st.sidebar: 块
