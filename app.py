@@ -1698,7 +1698,26 @@ st.markdown(f"""
         background-color: rgba(255, 255, 255, 0.15);
     }}
 
- 
+    /* 只隐藏文字，保留原本的图标 */
+    button[data-testid="stBaseButton-headerNoPadding"] span,
+    button[data-testid="stBaseButton-headerNoPadding"] .material-icons,
+    button[data-testid="stBaseButton-headerNoPadding"] svg::before,
+    button[data-testid="stSidebarCollapseButton"] span,
+    button[data-testid="stSidebarCollapseButton"] .material-icons,
+    button[data-testid="stSidebarCollapseButton"] svg::before,
+    button[kind="headerNoPadding"] span,
+    button[kind="headerNoPadding"] .material-icons,
+    button[kind="headerNoPadding"] svg::before {{
+        display: none !important;
+    }}
+    
+    /* 确保按钮容器可见 */
+    div[data-testid="stSidebarCollapseButton"] {{
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }}
+     
 </style>
 """, unsafe_allow_html=True)
 
