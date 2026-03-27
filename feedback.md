@@ -47,3 +47,43 @@
 Total: 0/5
 
 ---
+
+## Quiz Record - 2026-03-27 14:55:52
+
+**Topic:** Body / Health / Medicine / Food / Nutrition
+**Mode:** NEMT & CET
+
+### Quiz:
+## Quiz: Body / Health / Medicine / Food / Nutrition
+
+1. What is the term for the process of a baby stopping to drink milk from its mother's breast?
+A) Suckle
+B) Wean
+C) Vomit
+D) Starvation
+
+2. The doctor had to perform _______ to fix the damaged spine and relieve the patient's back pain.
+ 
+3. Translate the sentence "The patient needs to undergo surgery to repair the damaged tissue" into Chinese.
+
+4. The baby was very hungry and began to suckle on a bottle of tallow, but the mother knew that was incorrect and said "you can't give a baby tallow, it's not good for them, the correct sentence should be the baby was very hungry and began to suckle on a bottle of milk".
+
+5. Use the words "tuna", "vomit", "eat" to make a sentence.
+
+### User Answers:
+1. teach me all vocabs
+2. pass
+3. pass
+4. pas
+5. pass
+
+### Evaluation:
+1: ❌ - Your response “teach me all vocabs” doesn’t provide the term for the baby’s feeding process. What word might describe a baby stopping breastfeeding?  
+2: ❌ - “pass” does not fill the blank with a medical procedure. Can you think of a surgery that corrects a damaged spine?  
+3: ❌ - “pass” is not a Chinese translation of the English sentence. How would you convey “The patient needs to undergo surgery to repair the damaged tissue” in Chinese?  
+4: ❌ - “pas” does not correct the sentence or address the error. What changes would you make to replace “tallow” with an appropriate word for a baby’s drink?  
+5: ❌ - “pass” does not form a sentence using “tuna”, “vomit”, and “eat”. How could you combine those three words into a meaningful sentence?  
+
+Total: 0/5
+
+---
