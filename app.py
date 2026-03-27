@@ -371,6 +371,17 @@ if bg_base64 is None:
 else:
     bg_css = f"background-image: url('data:image/jpeg;base64,{bg_base64}');"
 
+# ---------- 加载 CSS 样式 ----------
+def load_css():
+    try:
+        with open("styles.css", "r", encoding="utf-8") as f:
+            css_content = f.read()
+            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("styles.css not found")
+
+load_css()
+
 # ---------- 初始化语言状态 ----------
 if "language" not in st.session_state:
     st.session_state.language = "Chinese"
@@ -1518,217 +1529,6 @@ def process_ocr_pdf(uploaded_pdf):
         return text
     else:
         return None
-
-# ---------- CSS样式 ----------
-st.markdown(f"""
-<style>
-    /* 添加 Material Icons 字体 */
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
-
-    /* 主应用样式 */
-    .stApp {{
-        {bg_css}
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }}
-
-    * {{
-        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-    }}
-
-    .stApp {{
-        background-color: rgba(0, 0, 0, 0.8) !important;
-        background-blend-mode: overlay !important;
-    }}
-
-
-    /* 确保侧边栏中的文本可见 */
-    section[data-testid="stSidebar"] * {{
-        color: #ffffff !important;
-    }}
-
-    /* 侧边栏输入框、选择框、按钮 - 黑色半透明 */
-    section[data-testid="stSidebar"] input,
-    section[data-testid="stSidebar"] textarea,
-    section[data-testid="stSidebar"] select,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] [data-baseweb="select"] {{
-        background-color: rgba(0, 0, 0, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        color: #b0b0b0 !important;
-    }}
-
-    /* 侧边栏按钮 - 黑色半透明 */
-    section[data-testid="stSidebar"] button {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        color: #b0b0b0 !important;
-    }}
-
-    /* 下拉框选项文字颜色 */
-    section[data-testid="stSidebar"] select option {{
-        background-color: #1a1a2e !important;
-        color: #b0b0b0 !important;
-    }}
-
-    /* 语音按钮 */
-    section[data-testid="stSidebar"] div[data-testid="stAudioInput"] button {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }}
-
-    /* 聊天输入框 */
-    section[data-testid="stSidebar"] div[data-testid="stChatInput"] textarea {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #b0b0b0  !important;
-    }}
-
-    /* Search 输入框 */
-    section[data-testid="stSidebar"] input[data-testid="stTextInput"] {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #b0b0b0 !important;
-    }}
-
-    /* OCR 文件上传区域 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-    }}
-
-    /* 文件上传按钮 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] button {{
-        background-color: rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }}
-
-    /* 文件上传区域文字 */
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] p,
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] span {{
-        color: #b0b0b0 !important;
-    }}
-
-    /* 其他原有样式保持不变 */
-    .breadcrumb {{
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        font-family: 'Manrope', sans-serif;
-        font-size: 18px;
-        color: #ffffff !important;
-        font-weight: 700;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }}
-
-    /* ================================================================
-       FIX 4: CSS 字体大小修复
-       原代码 font-size: 100px / 92px / 300px 明显是调试遗留值
-       ================================================================ */
-    button[kind="primary"],
-    .stButton button {{
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        color: #ffffff !important;
-        font-family: 'Manrope', sans-serif !important;
-        font-size: 20px !important;
-        font-weight: 800 !important;
-        padding: 30px !important;
-        transition: all 0.3s ease !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 12px !important;
-    }}
-
-    .stButton button > div {{
-        font-size: 18px !important;
-        font-weight: 800 !important;
-    }}
-
-    .stButton button:hover {{
-        background-color: rgba(255, 255, 255, 0.3) !important;
-        transform: translateY(-2px);
-    }}
-
-    h1 {{
-        color: #ffffff !important;
-        font-size: 60px;
-        font-weight: 800;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    }}
-
-    @media (max-width: 768px) {{
-        h1 {{
-            font-size: 36px;
-        }}
-    }}
-
-    h2, h3 {{
-        color: #ffffff !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    }}
-
-    p, div, span, label {{
-        color: #ffffff !important;
-    }}
-
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {{
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }}
-
-    .word-card {{
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 10px 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease;
-    }}
-
-    .word-card:hover {{
-        transform: translateY(-2px);
-        background-color: rgba(255, 255, 255, 0.15);
-    }}
-
-    /* 只隐藏文字，保留原本的图标 */
-    button[data-testid="stBaseButton-headerNoPadding"] span,
-    button[data-testid="stBaseButton-headerNoPadding"] .material-icons,
-    button[data-testid="stBaseButton-headerNoPadding"] svg::before,
-    button[data-testid="stSidebarCollapseButton"] span,
-    button[data-testid="stSidebarCollapseButton"] .material-icons,
-    button[data-testid="stSidebarCollapseButton"] svg::before,
-    button[kind="headerNoPadding"] span,
-    button[kind="headerNoPadding"] .material-icons,
-    button[kind="headerNoPadding"] svg::before {{
-        display: none !important;
-    }}
-
-    /* 只添加紫色背景，其他不变 */
-    button[data-testid="stBaseButton-headerNoPadding"],
-    button[data-testid="stSidebarCollapseButton"],
-    button[kind="headerNoPadding"] {{
-        background-color: #667eea !important;
-        border-radius: 8px !important;
-    }}
-
-    /* 确保按钮容器可见 */
-    div[data-testid="stSidebarCollapseButton"] {{
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }}
-
-</style>
-""", unsafe_allow_html=True)
-
 
 
 
