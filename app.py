@@ -1710,14 +1710,22 @@ st.markdown(f"""
     button[kind="headerNoPadding"] svg::before {{
         display: none !important;
     }}
-    
+
+    /* 只添加紫色背景，不改其他 */
+    button[data-testid="stBaseButton-headerNoPadding"],
+    button[data-testid="stSidebarCollapseButton"],
+    button[kind="headerNoPadding"] {{
+        background-color: #667eea !important;
+        border-radius: 8px !important;
+    }}
+        
     /* 确保按钮容器可见 */
     div[data-testid="stSidebarCollapseButton"] {{
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
     }}
-     
+
 </style>
 """, unsafe_allow_html=True)
 
