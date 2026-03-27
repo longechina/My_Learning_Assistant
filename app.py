@@ -1544,9 +1544,6 @@ st.markdown(f"""
     }}
 
     /* 隐藏不必要的Streamlit元素 */
-    header[data-testid="stHeader"] {{
-        display: none !important;
-    }}
 
     footer {{
         display: none !important;
