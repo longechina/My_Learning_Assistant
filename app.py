@@ -1698,14 +1698,17 @@ st.markdown(f"""
         background-color: rgba(255, 255, 255, 0.15);
     }}
 
-    /* 强制显示所有折叠相关按钮 */
-    button[data-testid="stBaseButton-headerNoPadding"],
-    button[data-testid="stSidebarCollapseButton"],
-    section[data-testid="stSidebar"] button {{
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        z-index: 999999 !important;
+    /* 隐藏所有文字和图标，只显示紫色按钮 */
+    button[data-testid="stBaseButton-headerNoPadding"] span,
+    button[data-testid="stBaseButton-headerNoPadding"] .material-icons,
+    button[data-testid="stBaseButton-headerNoPadding"] svg,
+    button[data-testid="stBaseButton-headerNoPadding"]::before {{
+        display: none !important;
+        content: none !important;
+    }}
+    
+    /* 按钮基础样式 - 始终紫色 */
+    button[data-testid="stBaseButton-headerNoPadding"] {{
         background-color: #667eea !important;
         border-radius: 8px !important;
         width: 36px !important;
@@ -1715,34 +1718,18 @@ st.markdown(f"""
         transition: all 0.3s ease !important;
     }}
     
-    /* 隐藏所有文字和图标 */
-    button[data-testid="stBaseButton-headerNoPadding"] span,
-    button[data-testid="stBaseButton-headerNoPadding"] .material-icons,
-    button[data-testid="stBaseButton-headerNoPadding"] svg,
-    button[data-testid="stBaseButton-headerNoPadding"]::before,
-    button[data-testid="stSidebarCollapseButton"] span,
-    button[data-testid="stSidebarCollapseButton"] .material-icons,
-    button[data-testid="stSidebarCollapseButton"] svg,
-    button[data-testid="stSidebarCollapseButton"]::before {{
-        display: none !important;
-        content: none !important;
-    }}
-    
     /* 悬停效果 */
-    button[data-testid="stBaseButton-headerNoPadding"]:hover,
-    button[data-testid="stSidebarCollapseButton"]:hover,
-    section[data-testid="stSidebar"] button:hover {{
+    button[data-testid="stBaseButton-headerNoPadding"]:hover {{
         background-color: #5a67d8 !important;
         transform: scale(1.05) !important;
     }}
     
-    /* 确保按钮容器可见 */
-    div[data-testid="stSidebarCollapseButton"] {{
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+    /* 确保折叠和展开状态下按钮都是紫色 */
+    section[data-testid="stSidebar"][aria-expanded="true"] button[data-testid="stBaseButton-headerNoPadding"],
+    section[data-testid="stSidebar"][aria-expanded="false"] button[data-testid="stBaseButton-headerNoPadding"] {{
+        background-color: #667eea !important;
     }}
-        
+     
 </style>
 """, unsafe_allow_html=True)
 
