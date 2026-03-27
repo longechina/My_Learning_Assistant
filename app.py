@@ -2070,20 +2070,42 @@ if st.session_state.search_keyword and st.session_state.search_results:
                 st.session_state.current_mode = "nemt_cet"
                 exam = res.get("exam", "")
                 st.session_state.selected_nemt_cet = exam
+                
                 raw_path = res.get("path", [])
-                # path 里第一个元素是分类key，直接作为 nemt_cet_path
                 clean_nemt_path = []
+                
+                # 标记：是否已经跳过了 exam 名称
+                skip_exam = False
+                
                 for p in raw_path:
                     p_str = str(p)
+                    
+                    # 去掉列表索引标记
                     if '[' in p_str:
                         p_str = p_str.split('[')[0]
-                    if p_str:
-                        clean_nemt_path.append(p_str)
+                    
+                    if not p_str:
+                        continue
+                    
+                    # 跳过 exam 名称（因为已经在 selected_nemt_cet 里了）
+                    if not skip_exam and p_str == exam:
+                        skip_exam = True
+                        continue
+                    
+                    # 跳过内容字段名（words, examples, notes, name 等）
+                    if p_str in ["words", "examples", "notes", "name", "vocabulary"]:
+                        continue
+                    
+                    clean_nemt_path.append(p_str)
+                
                 st.session_state.nemt_cet_path = clean_nemt_path
-                st.session_state.search_keyword = ""
-                st.session_state.search_results = []
+                
+                # 重要：重置 flip_states，避免显示混乱
+                st.session_state.flip_states = {}
+                
+                # 刷新页面
                 st.rerun()
-    
+                
     st.markdown("---")
 
 elif st.session_state.search_keyword:
