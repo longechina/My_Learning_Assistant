@@ -765,7 +765,7 @@ def global_search(keyword):
                         "type": "Category",
                         "content": str(key)[:150]
                     })
-                results.extend(search_in_dict(value, [key], "nemt_cet", None, keyword))
+                results.extend(search_in_dict(value, [key], "nemt_cet", exam_name, keyword))
     
     return deduplicate_results(results)
 
@@ -816,7 +816,7 @@ def local_search_nemt_cet(keyword):
                     "type": "Category",
                     "content": str(key)[:150]
                 })
-            results.extend(search_in_dict(value, [key], "nemt_cet", None, keyword))
+            results.extend(search_in_dict(value, [key], "nemt_cet", exam_name, keyword))
     
     return deduplicate_results(results)
 
