@@ -1698,30 +1698,7 @@ st.markdown(f"""
         background-color: rgba(255, 255, 255, 0.15);
     }}
 
-    /* 隐藏所有文字和图标 */
-    button[data-testid="stBaseButton-headerNoPadding"] span,
-    button[data-testid="stBaseButton-headerNoPadding"] .material-icons,
-    button[data-testid="stBaseButton-headerNoPadding"] svg,
-    button[data-testid="stBaseButton-headerNoPadding"]::before,
-    button[data-testid="stSidebarCollapseButton"] span,
-    button[data-testid="stSidebarCollapseButton"] .material-icons,
-    button[data-testid="stSidebarCollapseButton"] svg,
-    button[data-testid="stSidebarCollapseButton"]::before {{
-        display: none !important;
-        content: none !important;
-    }}
-    
-    /* 按钮样式 - 始终紫色 */
-    button[data-testid="stBaseButton-headerNoPadding"],
-    button[data-testid="stSidebarCollapseButton"] {{
-        background-color: #667eea !important;
-        border-radius: 8px !important;
-        width: 36px !important;
-        height: 36px !important;
-        border: none !important;
-        cursor: pointer !important;
-    }}
-     
+ 
 </style>
 """, unsafe_allow_html=True)
 
