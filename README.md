@@ -1,5 +1,5 @@
 [Personal Learning Assistant](https://longee.streamlit.app/)
-[System](images/pic.png)
+![System](images/pic.png)
 ##### For personal use
 - English and French language learning
 - Natural Language Processing
