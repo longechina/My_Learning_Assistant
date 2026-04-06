@@ -1,8 +1,23 @@
+# 虚拟环境
 venv/
+
+# Python 缓存
 __pycache__/
 *.pyc
+*.pyo
+
+# Streamlit
 .streamlit/
-venv/
-__pycache__/
-*.pyc
-.streamlit/
+
+# macOS
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+
+# 日志（可选，看你是否想追踪日志）
+# logs/
+
+# 环境变量
+.env
